@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+
+[computes]
+compute-1-a
+compute-1-b
+compute-1-c
+compute-1-d
+compute-1-e
+compute-1-f
+
+[utility]
+utility-z
+
+[clients]
+compute-1-x
+compute-1-y
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_extra_args='-o StrictHostKeyChecking=no'

@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- set_fact:
+    population_namespaces_counter: "{{ population_namespaces | length }}"
+    deployed_jobs_names_stdout: []
+    deployed_jobs_names: []
+
+- name: "populate_clusters | Deploy {{ job_name }} jobs inside namespaces"
+  kubernetes.core.k8s:
+    resource_definition: "{{ lookup('kubernetes.core.kustomize', dir=k8s_definitions_dir + '/' + redis_cluster_namespace + '/populate_db', binary_path='/usr/local/bin/kustomize') }}"
+    state: present
+  ignore_errors: yes
+  register: deployed_jobs_names_stdout
+  loop: "{{ population_namespaces }}"
+  loop_control:
+    loop_var: redis_cluster_namespace
+
+- set_fact:
+    deployed_jobs_names: "{{ deployed_jobs_names | default([]) + [ resource_info.1['result']['metadata']['name'] ] }}"
+  loop: "{{ deployed_jobs_names_stdout['results'] | subelements('result.results') }}"
+  loop_control:
+    loop_var: resource_info
+  when: resource_info.1['result']['kind'] == 'Job'
+  no_log: true
+
+- name: "populate_clusters | Wait for {{ job_name }} jobs to complete"
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Job
+    namespace: "{{ population_namespaces[counter | int - 1] }}"
+    name: "{{ deployed_jobs_names[counter | int - 1] }}"
+    wait: yes
+    wait_condition:
+      type: Complete
+      status: "True"
+    wait_sleep: 60
+    wait_timeout: 21600 # wait for 6h
+  with_sequence: start=1 end="{{ population_namespaces_counter }}"
+  loop_control:
+    loop_var: counter
+
+- pause:
+    seconds: 60
+
+- name: "populate_clusters | Check if population finished with success"
+  kubernetes.core.k8s_log:
+    api_version: v1
+    kind: Job
+    namespace: "{{ population_namespaces[counter | int - 1] }}"
+    name: "{{ populate_job_name }}"
+  register: population_log
+  failed_when: "'ALL STATS' not in population_log.log"
+  with_sequence: start=1 end="{{ population_namespaces_counter }}"
+  loop_control:
+    loop_var: counter
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

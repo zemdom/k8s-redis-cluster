@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: computes
+  gather_facts: no
+
+  tasks:
+    - name: "stop_emon | Stop emon"
+      command: /opt/intel/sep/bin64/emon -stop
+      become: yes
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

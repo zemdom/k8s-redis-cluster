@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: computes
+  pre_tasks:
+    - name: "run_emon | Fetch all facts"
+      setup: {}
+
+    - name: "run_emon | Load playbook variables"
+      include_vars: "../../vars/emon_vars.yml"
+
+  tasks:
+    - name: "run_emon | Create log dir"
+      file:
+        path: "/opt/{{ run_id }}"
+        state: "directory"
+      become: yes
+      register: runlogdir
+
+    - name: "run_emon | Create log subdirs"
+      file:
+        path: "{{ runlogdir.path }}/{{ item }}"
+        state: "directory"
+      become: yes
+      with_items:
+        - "EMON"
+        - "Results"
+
+    - name: "run_emon | Get server info"
+      shell: |
+        hostname -I |awk '{print "IP address: "$1}'
+        uname -a
+        cat /proc/cmdline
+        lscpu
+        free -h
+        swapon
+        numactl -H
+      register: server_info
+
+    - name: "run_emon | Save server info"
+      copy:
+        dest: "{{ runlogdir.path }}/Results/server_info.txt"
+        content: "{{ server_info.stdout }}"
+      become: yes
+
+    - name: "run_emon | Get server dimms info"
+      shell: |
+        ipmctl show -memoryresources
+        ipmctl show -dimm
+        ndctl list
+        daxctl list
+      register: dimms_info
+      become: yes
+
+    - name: "run_emon | Save dimms information"
+      lineinfile:
+        line: "{{ '\n'.join(dimms_info.stdout_lines) }}"
+        dest: "{{ runlogdir.path }}/Results/dimms_info.txt"
+        create: yes
+      become: yes
+
+    - name: "run_emon | Ensure that emon events txt platform dir is on SUT"
+      file:
+        path: "{{ edp_metrics_dir }}"
+        state: "directory"
+      become: yes
+
+    - name: "run_emon | Get *-events.txt file"
+      copy:
+        src: "{{ emon_events_file_dir }}/clx-2s-events.txt"
+        dest: "{{ edp_metrics_dir }}/clx-2s-events.txt"
+      become: yes
+
+    - name: "run_emon | Check if SEP module is already loaded"
+      shell: lsmod | grep  sepint5 | wc -l
+      register: lsmod_grep_sep
+
+    - name: "run_emon | Load SEP module"
+      shell: |
+        cd /opt/intel/sep/sepdk/src
+        ./insmod-sep
+      when: lsmod_grep_sep.stdout != "2"
+      become: yes
+
+    - shell: hostname
+      register: hostname
+
+    - set_fact:
+        hostname: "{{ hostname.stdout }}"
+
+    - name: "run_emon | Run emon and write to emon.dat"
+      shell: |
+        /opt/intel/sep/bin64/emon -v -t1 -l0 -i {{ edp_metrics_dir }}/clx-2s-events.txt > /opt/{{ run_id }}/EMON/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat &
+      async: 10
+      poll: 0
+      become: yes
+
+    - name: "run_emon | Get size of emon.dat file"
+      shell: stat -c %s /opt/{{ run_id }}/EMON/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat
+      register: emon_filesize_initial
+
+    - pause:
+        seconds: 5
+
+    - name: "run_emon | Get size of emon.dat file after a while to check if data collection started"
+      shell: stat -c %s /opt/{{ run_id }}/EMON/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat
+      register: emon_filesize
+
+    - name: "run_emon | Fail if emon data collection did not start properly"
+      fail:
+        msg: "Emon data collection did not start"
+      when: not (emon_filesize_initial.stdout|int < emon_filesize.stdout|int)
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

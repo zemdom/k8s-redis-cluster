@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+k8s_definitions_dir: "/opt/tmdb"
+client_results_dir: "/opt/redis-cluster-benchmark-results"
+
+#
+
+chart_version: "4.2.4"
+clusters_count_default: 1
+collect_emon_data_default: False
+
+logdir_default: "/home/logs"
+log_dir_structure: "redis_cluster_logs"
+
+multiple_clusters_balanced_default: True
+namespace_prefix: "redis-cluster"
+redis_nodes_count: 6
+
+run_id: "{{ lookup('env', 'run_id') }}"
+
+target_fw_ver_default: "01.02.00.5444"
+test_mode: "{{ lookup('env', 'test_mode') }}"
+warm_up_benchmark_run_default: False
+
+#
+
+# Redis & TieredMemDB specific
+dram_pmem_ratio_default: "1 3"
+multithreading_default: True
+pmem_variant_default: "multiple"
+threads_default: 8
+
+# memtier_benchmark specific
+clients_default: 3
+datasize_default: 1024
+pipeline_default: 1
+requests_default: 150000000
+
+#
+
+clients: "{{ lookup('env', 'clients') | default(clients_default, true) }}"
+clusters_count: "{{ lookup('env', 'clusters_count') | default(clusters_count_default, true) }}"
+collect_emon_data: "{{ lookup('env', 'collect_emon_data') | default(collect_emon_data_default, true) }}"
+datasize: "{{ lookup('env', 'datasize') | default(datasize_default, true) }}"
+dram_pmem_ratio: "{{ lookup('env', 'dram_pmem_ratio') | default(dram_pmem_ratio_default, true) }}"
+logdir: "{{ lookup('env', 'logdir') | default(logdir_default, true) }}"
+multiple_clusters_balanced: "{{ lookup('env', 'multiple_clusters_balanced') | default(multiple_clusters_balanced_default, true) }}"
+multithreading: "{{ lookup('env', 'multithreading') | default(multithreading_default, true) }}"
+pmem_variant: "{{ lookup('env', 'pmem_variant') | default(pmem_variant_default, true) }}"
+pipeline: "{{ lookup('env', 'pipeline') | default(pipeline_default, true) }}"
+requests: "{{ lookup('env', 'requests') | default(requests_default, true) }}"
+target_fw_ver: "{{ lookup('env', 'target_fw_ver') | default(target_fw_ver_default, true) }}"
+threads: "{{ lookup('env', 'threads') | default(threads_default, true) }}"
+warm_up_benchmark_run: "{{ lookup('env', 'warm_up_benchmark_run') | default(warm_up_benchmark_run_default, true) }}"
+
+python_packages:
+  - "kubernetes"
+  - "openshift"
+  - "openpyxl"
+  - "boto3"
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

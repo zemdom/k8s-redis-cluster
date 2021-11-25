@@ -1,0 +1,158 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: utility[0]
+  become: true
+  become_user: root
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+
+  pre_tasks:
+    - name: "deploy | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+    - name: "deploy | Load registry variables"
+      include_vars: "vars/registry_vars.yml"
+
+  tasks:
+    - name: "deploy | Clear variables"
+      set_fact:
+        namespaces_counter: []
+        namespaces: []
+
+    - name: "deploy | Generate namespaces indexes"
+      set_fact:
+        namespaces_counter: "{{ namespaces_counter | default([]) + [ item ] }}"
+      with_sequence: start=1 end="{{ clusters_count }}"
+
+    - name: "deploy | Generate namespaces names"
+      set_fact:
+        namespaces: "{{ namespaces | default([]) + [ namespace_prefix + '%s' | format(item) ] }}"
+      loop: "{{ namespaces_counter }}"
+
+    - set_fact:
+        single_cluster_testcase: "{{ True if clusters_count|int == 1 else False }}"
+
+    - name: "deploy | Set config files paths for Redis and TieredMemDB"
+      set_fact:
+        redis_chart_values: "{{ playbook_dir }}/templates/helm_chart_values/redis-cluster_Redis_values.yml.j2"
+        tmdb_chart_values: "{{ playbook_dir }}/templates/helm_chart_values/redis-cluster_TieredMemDB_values.yml.j2"
+        multiple_clusters_chart_configs: [ "first-group", "second-group" ]
+
+    - name: "deploy | Use config for {{ 'Redis' if test_mode == 'redis' else 'TieredMemDB' }}"
+      set_fact:
+        chart_values: "{{ redis_chart_values if test_mode == 'redis' else tmdb_chart_values }}"
+
+    - name: "deploy | Create helm_chart_deployment config directory"
+      file:
+        path: "{{ k8s_definitions_dir }}/helm_chart_deployment"
+        recurse: yes
+
+    - name: "deploy | Create redis-cluster chart kustomization from template"
+      template:
+        src: "{{ item }}"
+        dest: "{{ k8s_definitions_dir }}/helm_chart_deployment/{{ item | basename | regex_replace('\\.j2$', '') }}"
+      with_fileglob:
+        - "{{ playbook_dir }}/templates/helm_chart_deployment/*.j2"
+
+    - name: "deploy | Copy redis-cluster chart patches to kustomization directory"
+      copy:
+        src: "{{ item }}"
+        dest: "{{ k8s_definitions_dir }}/helm_chart_deployment/{{ item | basename }}"
+      with_fileglob:
+        - "{{ playbook_dir }}/templates/helm_chart_deployment/*.yml"
+
+    - name: "deploy | Deploy redis-cluster for single-cluster testcase"
+      block:
+      - name: "deploy | Create redis-cluster values.yml file from template"
+        template:
+          src: "{{ chart_values }}"
+          dest: "{{ k8s_definitions_dir }}/redis-cluster_values.yml"
+
+      - name: "deploy | Deploy patched bitnami redis-cluster chart inside namespace for single cluster testcase"
+        shell: |
+          helm install redis-cluster bitnami/redis-cluster \
+          --version "{{ chart_version }}" \
+          --create-namespace \
+          --namespace "{{ redis_cluster_namespace }}" \
+          --values "{{ k8s_definitions_dir }}/redis-cluster_values.yml" \
+          --post-renderer "{{ playbook_dir }}/templates/helm_chart_deployment/helm_post_renderer_hook.sh"
+        environment:
+          KUSTOMIZE_DIR: "{{ k8s_definitions_dir }}/helm_chart_deployment"
+        loop: "{{ namespaces }}"
+        loop_control:
+          loop_var: redis_cluster_namespace
+        async: 6000
+        poll: 0
+
+      when: single_cluster_testcase
+
+    - name: "deploy | Deploy redis-clusters for balanced multiple-clusters testcase"
+      block:
+      - name: "deploy | Create redis-cluster values.yml files from template"
+        template:
+          src: "{{ chart_values }}"
+          dest: "{{ k8s_definitions_dir }}/redis-cluster_values-{{ item.0 }}.yml"
+        vars:
+          computes_group: "{{ item.1 }}"
+        with_indexed_items:
+          - "{{ multiple_clusters_chart_configs }}"
+
+      - name: "deploy | Deploy patched bitnami redis-cluster chart inside namespaces for balanced multiple-clusters testcase"
+        shell: |
+          helm install redis-cluster bitnami/redis-cluster \
+          --version "{{ chart_version }}" \
+          --create-namespace \
+          --namespace "{{ redis_cluster_namespace }}" \
+          --values "{{ k8s_definitions_dir }}/redis-cluster_values-{{ index % multiple_clusters_chart_configs | length }}.yml" \
+          --post-renderer "{{ playbook_dir }}/templates/helm_chart_deployment/helm_post_renderer_hook.sh"
+        environment:
+          KUSTOMIZE_DIR: "{{ k8s_definitions_dir }}/helm_chart_deployment"
+        loop: "{{ namespaces }}"
+        loop_control:
+          loop_var: redis_cluster_namespace
+          index_var: index
+        async: 6000
+        poll: 0
+
+      when: not single_cluster_testcase and multiple_clusters_balanced
+
+    - name: "deploy | Deploy redis-clusters for unbalanced multiple-clusters testcase"
+      block:
+      - name: "deploy | Create redis-cluster values.yml files from template"
+        template:
+          src: "{{ chart_values }}"
+          dest: "{{ k8s_definitions_dir }}/redis-cluster_values.yml"
+
+      - name: "deploy | Deploy patched bitnami redis-cluster chart inside namespaces for unbalanced multiple-clusters testcase"
+        shell: |
+          helm install redis-cluster bitnami/redis-cluster \
+          --version "{{ chart_version }}" \
+          --create-namespace \
+          --namespace "{{ redis_cluster_namespace }}" \
+          --values "{{ k8s_definitions_dir }}/redis-cluster_values.yml" \
+          --post-renderer "{{ playbook_dir }}/templates/helm_chart_deployment/helm_post_renderer_hook.sh"
+        environment:
+          KUSTOMIZE_DIR: "{{ k8s_definitions_dir }}/helm_chart_deployment"
+        loop: "{{ namespaces }}"
+        loop_control:
+          loop_var: redis_cluster_namespace
+        async: 6000
+        poll: 0
+
+      when: not single_cluster_testcase and not multiple_clusters_balanced
+
+    - name: "deploy | Check if redis-cluster release deployments finished with success"
+      kubernetes.core.helm_info:
+        name: redis-cluster
+        release_namespace: "{{ redis_cluster_namespace }}"
+      register: redis_cluster_release_info
+      until:  (redis_cluster_release_info.status is defined) and ('DEPLOYED' in redis_cluster_release_info.status.status | upper)
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: redis_cluster_namespace
+      retries: 10
+      delay: 30
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible
