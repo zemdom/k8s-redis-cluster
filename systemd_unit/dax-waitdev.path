@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+
+[Unit]
+Description=Reconfigure DAX devices from devdax mode to a system-ram mode - delay until dax devices exist
+
+[Path]
+#
+# "Dummy" (always existing) file to keep systemd happy
+# (if there is no items in the [Path], systemd complains)
+#
+PathExists=/dev/null
+
+#
+# List all devices the daxctl would try to initialize.
+# For each (new) device, this unit will try to start the
+# related service, which will start only when all devices
+# are ready. These should normally be the udev persistent
+# rule names to avoid confusion.
+#
+# You must also update the service file with the same
+# capture device paths.
+#
+
+PathExists=/dev/dax0.0
+PathExists=/dev/dax1.0
+
+[Install]
+WantedBy=multi-user.target
