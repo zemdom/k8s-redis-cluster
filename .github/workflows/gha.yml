@@ -24,4 +24,4 @@ jobs:
         uses: ansible/ansible-lint-action@master
         with:
           args: "-p"
-          targets: $HOST_WORKDIR/ansible-playbook/
+          targets: $HOST_WORKDIR/ansible-playbook
