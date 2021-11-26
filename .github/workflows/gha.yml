@@ -6,7 +6,7 @@ jobs:
     name: k8s-redis-cluster
     runs-on: ubuntu-latest
     env:
-      HOST_WORKDIR:   /home/runner/work/k8s-redis-cluster/k8s-redis-cluster
+      HOST_WORKDIR:   ${{ github.workspace }}
       LICENSE_TAG:    BSD-3-Clause
     steps:
       - name: Checkout code
