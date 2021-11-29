@@ -12,9 +12,9 @@ redis_tag: "{{ lookup('env', 'redis_tag') | default(redis_tag_default, true) }}"
 
 #
 
-tmdb_registry_default: "10.60.196.103:5000"
-tmdb_repository_default: "dev/tieredmemdb"
-tmdb_tag_default: "debian-buster-0d0d383-opensource"
+tmdb_registry_default: ""
+tmdb_repository_default: ""
+tmdb_tag_default: ""
 
 tmdb_registry: "{{ lookup('env', 'tmdb_registry') | default(tmdb_registry_default, true) }}"
 tmdb_repository: "{{ lookup('env', 'tmdb_repository') | default(tmdb_repository_default, true) }}"
