@@ -26,6 +26,6 @@ jobs:
 
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
-        targets: ${{ steps.vars.outputs.ansible_files }}
         with:
           args: "-p -c .ansible-lint"
+          targets: ${{ steps.vars.outputs.ansible_files }}
