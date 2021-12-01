@@ -23,4 +23,4 @@ jobs:
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
         with:
-          args: "-p -c $HOST_WORKDIR/.ansible-lint"
+          args: "-p -c .ansible-lint"
