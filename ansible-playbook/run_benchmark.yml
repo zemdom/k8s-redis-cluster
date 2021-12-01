@@ -54,7 +54,7 @@
         set_fact:
           pods: "{{ lookup('file', pods_info_file_path) }}"
 
-      when: single_cluster_testcase == True
+      when: single_cluster_testcase
 
     - block:
       - set_fact:
@@ -63,8 +63,7 @@
       - set_fact:
           run_tests_job_name: "bench-run-tests-{{ run_id }}-{{ run_count }}run"
 
-      - include_tasks:
-          file: "include/tasks/create_job_config.yml"
+      - include_tasks: "include/tasks/create_job_config.yml"
         vars:
           job_name: "{{ run_tests_job_name }}"
           kustomization_dir: "run_tests_timed"
@@ -74,8 +73,7 @@
         loop_control:
           loop_var: redis_cluster_namespace
 
-      - include_tasks:
-          file: "include/tasks/benchmark_clusters.yml"
+      - include_tasks: "include/tasks/benchmark_clusters.yml"
         vars:
           benchmark_namespaces: "{{ namespaces }}"
           job_name: "{{ run_tests_job_name }}"
@@ -89,8 +87,7 @@
     - set_fact:
         run_tests_job_name: "bench-run-tests-{{ run_id }}-{{ run_count }}run"
 
-    - include_tasks:
-        file: "include/tasks/create_job_config.yml"
+    - include_tasks: "include/tasks/create_job_config.yml"
       vars:
         job_name: "{{ run_tests_job_name }}"
         kustomization_dir: "run_tests_timed"
@@ -117,8 +114,7 @@
       include_vars: "vars/vars.yml"
 
   tasks:
-    - include_tasks:
-        file: "include/tasks/benchmark_clusters.yml"
+    - include_tasks: "include/tasks/benchmark_clusters.yml"
       vars:
         benchmark_namespaces: "{{ namespaces }}"
         job_name: "{{ run_tests_job_name }}"
