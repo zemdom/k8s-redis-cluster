@@ -81,8 +81,7 @@
     - set_fact:
         populate_job_name: "redis-populate-{{ run_id }}"
 
-    - include_tasks:
-        file: "include/tasks/create_job_config.yml"
+    - include_tasks: "include/tasks/create_job_config.yml"
       vars:
         job_name: "{{ populate_job_name }}"
         kustomization_dir: "populate_db"
@@ -95,8 +94,7 @@
     - set_fact:
         sequence_counter: 12
 
-    - include_tasks:
-        file: "include/tasks/populate_clusters.yml"
+    - include_tasks: "include/tasks/populate_clusters.yml"
       vars:
         job_name: "{{ populate_job_name }}"
         population_namespaces: "{{ namespaces[(item | int - 1) * (sequence_counter | int):(item | int) * (sequence_counter | int)] }}"
@@ -105,8 +103,7 @@
     - set_fact:
         exec_stamp: "{{ ansible_date_time.epoch }}"
 
-    - include_tasks:
-        file: "include/tasks/save_pods_info.yml"
+    - include_tasks: "include/tasks/save_pods_info.yml"
       vars:
         namespace: "{{ redis_cluster_namespace }}"
       loop: "{{ namespaces }}"
