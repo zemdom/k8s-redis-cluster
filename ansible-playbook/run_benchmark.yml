@@ -54,7 +54,7 @@
         set_fact:
           pods: "{{ lookup('file', pods_info_file_path) }}"
 
-      when: single_cluster_testcase == True
+      when: single_cluster_testcase
 
     - block:
       - set_fact:
