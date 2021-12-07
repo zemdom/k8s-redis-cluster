@@ -3,19 +3,19 @@
 #
 
 [computes]
-compute-1-a
-compute-1-b
-compute-1-c
-compute-1-d
-compute-1-e
-compute-1-f
+example.compute-1-a
+example.compute-1-b
+example.compute-1-c
+example.compute-1-d
+example.compute-1-e
+example.compute-1-f
 
 [utility]
-utility-z
+example.utility-z
 
 [clients]
-compute-1-x
-compute-1-y
+example.compute-1-x
+example.compute-1-y
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
