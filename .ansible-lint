@@ -1,6 +1,7 @@
 skip_list:
-  - command-instead-of-shell
-  - no-changed-when
-  - risky-shell-pipe
-  - role-name
-  - yaml
+  - '204'  # Lines should be no longer than 160 chars
+  - '208'  # File permissions unset or incorrect
+  - '301'  # Commands should not change things if nothing needs doing
+  - '305'  # Use shell only when shell functionality is required
+  - '306'  # Shells that use pipes should set the pipefail option
+  - '502'  # All tasks should be named
