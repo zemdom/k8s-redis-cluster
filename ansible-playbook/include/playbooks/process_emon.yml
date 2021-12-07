@@ -29,6 +29,9 @@
     - name: "process_emon | Load playbook variables"
       include_vars: "../../vars/vars.yml"
 
+    - name: "process_emon | Load emon specific playbook variables"
+      include_vars: "../../vars/emon_vars.yml"
+
   tasks:
     - shell: hostname
       register: hostname

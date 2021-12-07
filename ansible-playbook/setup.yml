@@ -21,6 +21,9 @@
     - name: "setup | Load playbook variables"
       include_vars: "vars/vars.yml"
 
+    - name: "setup | Load emon specific playbook variables"
+      include_vars: "vars/emon_vars.yml"
+
     - name: "setup | Copy kmemdax systemd unit files"
       copy:
          src: "{{ item }}"
@@ -29,18 +32,21 @@
         - "{{ playbook_dir }}/../systemd_unit/dax*"
       become: yes
 
-    - name: "setup | Extract tarball with sep+emon"
-      unarchive:
-        src: "{{ sep_emon_tarball_sourcedir }}/{{ sep_emon_version }}.tar.gz"
-        dest: "/tmp"
-      become: true
-      become_user: root
+    - name: :"setup | Install emon"
+      block:
+      - name: "setup | Extract tarball with sep+emon"
+        unarchive:
+          src: "{{ sep_emon_tarball_sourcedir }}/{{ sep_emon_version }}.tar.gz"
+          dest: "/tmp"
+        become: true
+        become_user: root
 
-    - name: "setup | Install sep modules"
-      shell: |
-        cd /tmp/{{ sep_emon_version }}
-        ./sep-installer.sh -ni -i --accept-license
-      become: true
-      become_user: root
+      - name: "setup | Install sep modules"
+        shell: |
+          cd /tmp/{{ sep_emon_version }}
+          ./sep-installer.sh -ni -i --accept-license
+        become: true
+        become_user: root
+      when: sep_emon_tarball_sourcedir
 
   # vi:et:sw=2 ts=2 sts=2 ft=ansible
