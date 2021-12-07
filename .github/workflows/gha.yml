@@ -6,7 +6,7 @@ jobs:
     name: k8s-redis-cluster
     runs-on: ubuntu-latest
     env:
-      HOST_WORKDIR:   /home/runner/work/k8s-redis-cluster/k8s-redis-cluster
+      HOST_WORKDIR:   ${{ github.workspace }}
       LICENSE_TAG:    BSD-3-Clause
     steps:
       - name: Checkout code
@@ -20,8 +20,12 @@ jobs:
       - name: Check license headers
         run: $HOST_WORKDIR/utils/check_license/check-headers.sh $HOST_WORKDIR $LICENSE_TAG
 
+      - name: Find ansible files to lint
+        id: vars
+        run: echo ::set-output name=ansible_files::$(grep -lr 'ft=ansible' ansible-playbook)
+
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
         with:
-          args: "-p"
-          targets: $HOST_WORKDIR/ansible-playbook/
+          args: "-p -c .ansible-lint"
+          targets: ${{ steps.vars.outputs.ansible_files }}
