@@ -18,18 +18,9 @@ multiple_clusters_balanced_default: True
 namespace_prefix: "redis-cluster"
 redis_nodes_count: 6
 
-redis_registry_default: "docker.io"
-redis_repository_default: "bitnami/redis-cluster"
-redis_tag_default: "6.0.9-debian-10-r59"
-
 run_id: "{{ lookup('env', 'run_id') }}"
 target_fw_ver_default: "01.02.00.5444"
 test_mode: "{{ lookup('env', 'test_mode') }}"
-
-tmdb_registry_default: ""
-tmdb_repository_default: ""
-tmdb_tag_default: ""
-
 warm_up_benchmark_run_default: False
 
 #
@@ -45,6 +36,16 @@ clients_default: 3
 datasize_default: 1024
 pipeline_default: 1
 requests_default: 150000000
+
+# Registry specific - Redis
+redis_registry_default: "docker.io"
+redis_repository_default: "bitnami/redis-cluster"
+redis_tag_default: "6.0.9-debian-10-r59"
+
+# Registry specific - TieredMemDB
+tmdb_registry_default: ""
+tmdb_repository_default: ""
+tmdb_tag_default: ""
 
 #
 
