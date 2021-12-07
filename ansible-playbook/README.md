@@ -85,7 +85,7 @@ clusters_count=<optional> run_id=<run_identifier> ansible-playbook -i inventory 
 > For this step you can modify [memtier_benchmark specific](#memtier_benchmark-specific) variables.
 
 \
-**3. Run memtier_benchmark (use the same `run_id` as in the population step):**
+**3. Run memtier_benchmark** (use the same `run_id` as in the population step):
 ```shell
 clusters_count=<optional> run_id=<run_identifier> ansible-playbook -i inventory run_benchmark.yml [--extra-vars "@vars/s3_vars.yml"]
 ```
