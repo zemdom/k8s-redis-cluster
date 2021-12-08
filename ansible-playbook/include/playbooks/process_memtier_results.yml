@@ -50,7 +50,10 @@
 
     - block:
       - name: "process_memtier | Get metrics for each cluster"
-        shell: "grep \"{{ what_to_grep }}\" -A7 {{ client_results_dir }}/{{ run_id }}* | grep Totals | awk -v OFS='\t\t' '{sub(\".*{{ run_id }}_\", \"\", $1); sub(\".txt-Totals\", \"\", $1); print $1, $2, $9, $10}' | sort --key 1 --version-sort"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk -v OFS='\t\t' '{sub(".*{{ run_id }}_", "", $1); sub(".txt-Totals", "", $1); print $1, $2, $9, $10}' \
+          | sort --key 1 --version-sort
         register: clusters_metrics_stdout
 
       - set_fact:
@@ -72,21 +75,29 @@
         delegate_to: "{{ groups['utility'][0] }}"
 
       - name: "process_memtier | Sort metrics for each cluster by namespace"
-        shell: "sort --key 1 --version-sort {{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt -o {{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt"
+        shell: |
+          sort --key 1 --version-sort "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt" \
+          -o "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt"
         delegate_to: "{{ groups['utility'][0] }}"
 
       when: not single_cluster_testcase
 
     - name: "process_memtier | Get total throughput"
-      shell: "grep \"{{ what_to_grep }}\" -A7 {{ client_results_dir }}/{{ run_id }}* | grep Totals | awk '{print $2}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { printf \"%.2f\", total }'"
+      shell: |
+        grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+        | grep Totals | awk '{print $2}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { printf "%.2f", total }'
       register: throughput_stdout
 
     - name: "process_memtier | Get total p99 latency"
-      shell: "grep \"{{ what_to_grep }}\" -A7 {{ client_results_dir }}/{{ run_id }}* | grep Totals | awk '{print $9}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'"
+      shell: |
+        grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+        | grep Totals | awk '{print $9}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }' \
       register: p99_latency_stdout
 
     - name: "process_memtier | Get total p99.9 latency"
-      shell: "grep \"{{ what_to_grep }}\" -A7 {{ client_results_dir }}/{{ run_id }}* | grep Totals | awk '{print $10}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'"
+      shell: |
+        grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+        | grep Totals | awk '{print $10}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'
       register: p99_9_latency_stdout
 
     - name: "process_memtier | Sum metrics values from all clients"
@@ -151,15 +162,21 @@
           what_to_grep: "BEST RUN RESULTS"
 
       - name: "process_memtier | Get total throughput"
-        shell: "grep \"{{ what_to_grep }}\" -A7 {{ client_results_dir }}/{{ run_id }}* | grep Totals | awk '{print $2}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { printf \"%.2f\", total }'"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk '{print $2}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { printf "%.2f", total }'
         register: throughput_stdout
 
       - name: "process_memtier | Get total p99 latency"
-        shell: "grep \"{{ what_to_grep }}\" -A7 {{ client_results_dir }}/{{ run_id }}* | grep Totals | awk '{print $9}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk '{print $9}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'
         register: p99_latency_stdout
 
       - name: "process_memtier | Get total p99.9 latency"
-        shell: "grep \"{{ what_to_grep }}\" -A7 {{ client_results_dir }}/{{ run_id }}* | grep Totals | awk '{print $10}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk '{print $10}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'
         register: p99_9_latency_stdout
 
       - name: "process_memtier | Sum metrics values from all clients"
