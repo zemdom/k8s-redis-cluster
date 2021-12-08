@@ -91,7 +91,8 @@
 
     - name: "run_emon | Run emon and write to emon.dat"
       shell: |
-        /opt/intel/sep/bin64/emon -v -t1 -l0 -i {{ edp_metrics_dir }}/clx-2s-events.txt > /opt/{{ run_id }}/EMON/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat &
+        /opt/intel/sep/bin64/emon -v -t1 -l0 -i \
+        {{ edp_metrics_dir }}/clx-2s-events.txt > /opt/{{ run_id }}/EMON/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat &
       async: 10
       poll: 0
       become: yes
