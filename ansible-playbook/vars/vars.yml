@@ -19,7 +19,6 @@ namespace_prefix: "redis-cluster"
 redis_nodes_count: 6
 
 run_id: "{{ lookup('env', 'run_id') }}"
-
 target_fw_ver_default: "01.02.00.5444"
 test_mode: "{{ lookup('env', 'test_mode') }}"
 warm_up_benchmark_run_default: False
@@ -38,6 +37,16 @@ datasize_default: 1024
 pipeline_default: 1
 requests_default: 150000000
 
+# Registry specific - Redis
+redis_registry_default: "docker.io"
+redis_repository_default: "bitnami/redis-cluster"
+redis_tag_default: "6.0.9-debian-10-r59"
+
+# Registry specific - TieredMemDB
+tmdb_registry_default: ""
+tmdb_repository_default: ""
+tmdb_tag_default: ""
+
 #
 
 clients: "{{ lookup('env', 'clients') | default(clients_default, true) }}"
@@ -50,9 +59,15 @@ multiple_clusters_balanced: "{{ lookup('env', 'multiple_clusters_balanced') | de
 multithreading: "{{ lookup('env', 'multithreading') | default(multithreading_default, true) }}"
 pmem_variant: "{{ lookup('env', 'pmem_variant') | default(pmem_variant_default, true) }}"
 pipeline: "{{ lookup('env', 'pipeline') | default(pipeline_default, true) }}"
+redis_registry: "{{ lookup('env', 'redis_registry') | default(redis_registry_default, true) }}"
+redis_repository: "{{ lookup('env', 'redis_repository') | default(redis_repository_default, true) }}"
+redis_tag: "{{ lookup('env', 'redis_tag') | default(redis_tag_default, true) }}"
 requests: "{{ lookup('env', 'requests') | default(requests_default, true) }}"
 target_fw_ver: "{{ lookup('env', 'target_fw_ver') | default(target_fw_ver_default, true) }}"
 threads: "{{ lookup('env', 'threads') | default(threads_default, true) }}"
+tmdb_registry: "{{ lookup('env', 'tmdb_registry') | default(tmdb_registry_default, true) }}"
+tmdb_repository: "{{ lookup('env', 'tmdb_repository') | default(tmdb_repository_default, true) }}"
+tmdb_tag: "{{ lookup('env', 'tmdb_tag') | default(tmdb_tag_default, true) }}"
 warm_up_benchmark_run: "{{ lookup('env', 'warm_up_benchmark_run') | default(warm_up_benchmark_run_default, true) }}"
 
 python_packages:

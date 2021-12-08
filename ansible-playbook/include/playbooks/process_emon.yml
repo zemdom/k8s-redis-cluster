@@ -29,6 +29,9 @@
     - name: "process_emon | Load playbook variables"
       include_vars: "../../vars/vars.yml"
 
+    - name: "process_emon | Load emon specific playbook variables"
+      include_vars: "../../vars/emon_vars.yml"
+
   tasks:
     - shell: hostname
       register: hostname
@@ -40,8 +43,9 @@
       docker_container:
         name: "edp"
         image: "{{ edp_image }}"
-        entrypoint: >
-          /bin/sh -c "edp /dev/stdin < /emonout/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat > /emonout/EDP-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.xlsx"
+        entrypoint: |
+          /bin/sh -c \
+          "edp /dev/stdin< /emonout/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat > /emonout/EDP-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.xlsx"
         volumes:
           - "/opt/{{ run_id }}/EMON:/emonout"
         auto_remove: yes
@@ -87,7 +91,10 @@
         processing_script_flags: "{{ '--single-cluster' if single_cluster_testcase else '' }}"
 
     - name: "process_emon | Populate excel template with processed emon data"
-      command: "{{ processing_script_path }}/emon_parser_redis-cluster.py {{ processing_script_flags }} --paths {{ logdir }}/{{ log_dir_structure }}/{{ run_id }} --name {{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-results"
+      command: |
+        {{ processing_script_path }}/emon_parser_redis-cluster.py {{ processing_script_flags }} \
+        --paths {{ logdir }}/{{ log_dir_structure }}/{{ run_id }} \
+        --name {{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-results
 
     - name: "process_emon | Send results to s3 bucket"
       s3_sync:

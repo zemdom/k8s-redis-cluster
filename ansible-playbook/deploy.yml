@@ -12,9 +12,6 @@
     - name: "deploy | Load playbook variables"
       include_vars: "vars/vars.yml"
 
-    - name: "deploy | Load registry variables"
-      include_vars: "vars/registry_vars.yml"
-
   tasks:
     - name: "deploy | Clear variables"
       set_fact:

@@ -25,7 +25,8 @@
 
 - name: "save_pods_info | Filter raw redis-cluster-x pods info"
   set_fact:
-    redis_cluster_pods_filtered_info: "{{ redis_cluster_pods_filtered_info | default([]) + [ { 'podName': item.metadata['name'], 'computeNode': item['spec']['nodeName'], 'podIP': item['status']['podIP'] } ] }}"
+    redis_cluster_pods_filtered_info: "{{ redis_cluster_pods_filtered_info | default([]) + \
+                                      [ { 'podName': item.metadata['name'], 'computeNode': item['spec']['nodeName'], 'podIP': item['status']['podIP'] } ] }}"
   with_items: "{{ redis_cluster_pods_raw_info['resources'] }}"
   no_log: true
 
@@ -44,7 +45,10 @@
 
 - name: "save_pods_info | Extend redis-cluster-x pods info with roles"
   set_fact:
-    redis_cluster_pods: "{{ redis_cluster_pods | default([]) + [ { 'podName': item['item']['podName'], 'computeNode': item['item']['computeNode'], 'podIP': item['item']['podIP'], 'role': item['stdout_lines'][0], 'roleForPod': item['stdout_lines'] | map('regex_search', ip_address_regex_pattern) | select('string') | first } ] }}"
+    redis_cluster_pods: "{{ redis_cluster_pods | default([]) + \
+                        [ { 'podName': item['item']['podName'], 'computeNode': item['item']['computeNode'], \
+                        'podIP': item['item']['podIP'], 'role': item['stdout_lines'][0], \
+                        'roleForPod': item['stdout_lines'] | map('regex_search', ip_address_regex_pattern) | select('string') | first } ] }}"
   with_items: "{{ redis_cluster_pods_roles_info }}"
   no_log: true
 
@@ -55,18 +59,21 @@
 
 - name: "save_pods_info | Extend redis-cluster-x pods info with dependent nodes names"
   set_fact:
-    redis_cluster_final_pods: "{{ redis_cluster_final_pods | default([]) + [ {} | combine(item) | combine({'roleForPod' : redis_cluster_ip_name_dict[item.roleForPod]['podName'] }) ] }}"
+    redis_cluster_final_pods: "{{ redis_cluster_final_pods | default([]) + \
+                              [ {} | combine(item) | combine({'roleForPod' : redis_cluster_ip_name_dict[item.roleForPod]['podName'] }) ] }}"
   with_items: "{{ redis_cluster_pods }}"
 
 - name: "save_pods_info | Add master roles"
   set_fact:
-    pods: "{{ pods | default([]) + [ {} | combine(item) | combine({'numberedRole' : item['role'] + ( item['podName'][-1] | int + 1 ) | string }) ] }}"
+    pods: "{{ pods | default([]) + \
+          [ {} | combine(item) | combine({'numberedRole' : item['role'] + ( item['podName'][-1] | int + 1 ) | string }) ] }}"
   with_items: "{{  redis_cluster_final_pods }}"
   when: item['role'] == 'master'
 
 - name: "save_pods_info | Add replica roles"
   set_fact:
-    pods: "{{ pods | default([]) + [ {} | combine(item) | combine({'numberedRole' : 'replica' + ( item['roleForPod'][-1] | int + 1 ) | string }) ] }}"
+    pods: "{{ pods | default([]) + \
+          [ {} | combine(item) | combine({'numberedRole' : 'replica' + ( item['roleForPod'][-1] | int + 1 ) | string }) ] }}"
   with_items: "{{ redis_cluster_final_pods }}"
   when: item['role'] == 'slave'
 
@@ -76,12 +83,14 @@
     state: "directory"
   register: runlogdir
 
+# yamllint disable rule:line-length
 - name: "save_pods_info | Save redis-cluster-x pods info to file"
   lineinfile:
     line: "{{ item['numberedRole'] }} \t{{ item['computeNode'] }} {{ item['podName'] }}\t{{ 'master for' if item['role'] == 'master' else 'replica of' }} {{ item['roleForPod'] }}"
     dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
     create: yes
   with_items: "{{ pods }}"
+# yamllint enable rule:line-length
 
 - name: "save_pods_info | Save run id to file"
   lineinfile:

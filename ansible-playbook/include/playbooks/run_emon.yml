@@ -7,7 +7,7 @@
     - name: "run_emon | Fetch all facts"
       setup: {}
 
-    - name: "run_emon | Load playbook variables"
+    - name: "run_emon | Load emon specific playbook variables"
       include_vars: "../../vars/emon_vars.yml"
 
   tasks:
