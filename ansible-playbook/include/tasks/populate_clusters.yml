@@ -7,17 +7,15 @@
     deployed_jobs_names_stdout: []
     deployed_jobs_names: []
 
-# yamllint disable rule:line-length
 - name: "populate_clusters | Deploy {{ job_name }} jobs inside namespaces"
   kubernetes.core.k8s:
-    resource_definition: "{{ lookup('kubernetes.core.kustomize', dir=k8s_definitions_dir + '/' + redis_cluster_namespace + '/populate_db', binary_path='/usr/local/bin/kustomize') }}"
+    resource_definition: "{{ lookup('kubernetes.core.kustomize', dir=k8s_definitions_dir + '/' + redis_cluster_namespace + '/populate_db', binary_path='/usr/local/bin/kustomize') }}"  # noqa 204
     state: present
   ignore_errors: yes
   register: deployed_jobs_names_stdout
   loop: "{{ population_namespaces }}"
   loop_control:
     loop_var: redis_cluster_namespace
-# yamllint disable rule:line-length
 
 - set_fact:
     deployed_jobs_names: "{{ deployed_jobs_names | default([]) + [ resource_info.1['result']['metadata']['name'] ] }}"

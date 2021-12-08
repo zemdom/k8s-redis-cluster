@@ -83,14 +83,12 @@
     state: "directory"
   register: runlogdir
 
-# yamllint disable rule:line-length
 - name: "save_pods_info | Save redis-cluster-x pods info to file"
   lineinfile:
-    line: "{{ item['numberedRole'] }} \t{{ item['computeNode'] }} {{ item['podName'] }}\t{{ 'master for' if item['role'] == 'master' else 'replica of' }} {{ item['roleForPod'] }}"
+    line: "{{ item['numberedRole'] }} \t{{ item['computeNode'] }} {{ item['podName'] }}\t{{ 'master for' if item['role'] == 'master' else 'replica of' }} {{ item['roleForPod'] }}"  # noqa 204
     dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
     create: yes
   with_items: "{{ pods }}"
-# yamllint enable rule:line-length
 
 - name: "save_pods_info | Save run id to file"
   lineinfile:
