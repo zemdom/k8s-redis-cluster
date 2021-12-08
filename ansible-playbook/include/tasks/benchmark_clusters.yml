@@ -8,7 +8,7 @@
     deployed_jobs_names: []
 
 - name: "benchmark_clusters | Save kustomized {{ job_name }} jobs definitions to files"
-  copy: # noqa 204
+  copy: # noqa: E204
     content: "{{ lookup('kubernetes.core.kustomize', dir=k8s_definitions_dir_path + '/' + redis_cluster_namespace + '/run_tests_timed', binary_path='/usr/local/bin/kustomize') }}"
     dest: "{{ k8s_definitions_dir_path }}/{{ redis_cluster_namespace }}/run_tests_timed/kustomized_benchmark_run_tests_job.yml"
   loop: "{{ benchmark_namespaces }}"

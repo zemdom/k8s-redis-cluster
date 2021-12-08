@@ -84,7 +84,7 @@
   register: runlogdir
 
 - name: "save_pods_info | Save redis-cluster-x pods info to file"
-  lineinfile:  # noqa 204
+  lineinfile:  # noqa: E204
     line: "{{ item['numberedRole'] }} \t{{ item['computeNode'] }} {{ item['podName'] }}\t{{ 'master for' if item['role'] == 'master' else 'replica of' }} {{ item['roleForPod'] }}"
     dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
     create: yes
