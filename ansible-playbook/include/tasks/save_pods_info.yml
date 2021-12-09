@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- name: "save_pods_info | Clear variables"
+  set_fact:
+    redis_cluster_pods_raw_info: ""
+    redis_cluster_pods_filtered_info: []
+    redis_cluster_pods_roles_info: ""
+    redis_cluster_pods: []
+    redis_cluster_ip_name_dict: {}
+    redis_cluster_final_pods: []
+    pods: []
+
+- name: "save_pods_info | Get running redis-cluster pods info"
+  kubernetes.core.k8s_info:
+    api_version: v1
+    field_selectors:
+      - status.phase=Running
+    kind: Pod
+    label_selectors:
+      - app.kubernetes.io/instance=redis-cluster
+    namespace: "{{ namespace }}"
+  register: redis_cluster_pods_raw_info
+
+- name: "save_pods_info | Filter raw redis-cluster-x pods info"
+  set_fact:
+    redis_cluster_pods_filtered_info: "{{ redis_cluster_pods_filtered_info | default([]) + \
+                                      [ { 'podName': item.metadata['name'], 'computeNode': item['spec']['nodeName'], 'podIP': item['status']['podIP'] } ] }}"
+  with_items: "{{ redis_cluster_pods_raw_info['resources'] }}"
+  no_log: true
+
+- name: "save_pods_info | Get redis-cluster-x pods roles info"
+  kubernetes.core.k8s_exec:
+    command: redis-cli role
+    container: redis-cluster
+    namespace: "{{ namespace }}"
+    pod: "{{ item.podName }}"
+  register: redis_cluster_pods_roles_info
+  with_items: "{{ redis_cluster_pods_filtered_info }}"
+
+- set_fact:
+    redis_cluster_pods_roles_info: "{{ redis_cluster_pods_roles_info['results'] }}"
+    ip_address_regex_pattern: "^(\\d{1,3}\\.){3}\\d{1,3}"
+
+- name: "save_pods_info | Extend redis-cluster-x pods info with roles"
+  set_fact:
+    redis_cluster_pods: "{{ redis_cluster_pods | default([]) + \
+                        [ { 'podName': item['item']['podName'], 'computeNode': item['item']['computeNode'], \
+                        'podIP': item['item']['podIP'], 'role': item['stdout_lines'][0], \
+                        'roleForPod': item['stdout_lines'] | map('regex_search', ip_address_regex_pattern) | select('string') | first } ] }}"
+  with_items: "{{ redis_cluster_pods_roles_info }}"
+  no_log: true
+
+- set_fact:
+    redis_cluster_ip_name_dict: "{{ redis_cluster_ip_name_dict | default({}) | combine({ item['podIP'] : { 'podName': item['podName'] } }) }}"
+  with_items: "{{ redis_cluster_pods }}"
+  no_log: true
+
+- name: "save_pods_info | Extend redis-cluster-x pods info with dependent nodes names"
+  set_fact:
+    redis_cluster_final_pods: "{{ redis_cluster_final_pods | default([]) + \
+                              [ {} | combine(item) | combine({'roleForPod' : redis_cluster_ip_name_dict[item.roleForPod]['podName'] }) ] }}"
+  with_items: "{{ redis_cluster_pods }}"
+
+- name: "save_pods_info | Add master roles"
+  set_fact:
+    pods: "{{ pods | default([]) + \
+          [ {} | combine(item) | combine({'numberedRole' : item['role'] + ( item['podName'][-1] | int + 1 ) | string }) ] }}"
+  with_items: "{{  redis_cluster_final_pods }}"
+  when: item['role'] == 'master'
+
+- name: "save_pods_info | Add replica roles"
+  set_fact:
+    pods: "{{ pods | default([]) + \
+          [ {} | combine(item) | combine({'numberedRole' : 'replica' + ( item['roleForPod'][-1] | int + 1 ) | string }) ] }}"
+  with_items: "{{ redis_cluster_final_pods }}"
+  when: item['role'] == 'slave'
+
+- name: "save_pods_info | Create log dir"
+  file:
+    path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}"
+    state: "directory"
+  register: runlogdir
+
+- name: "save_pods_info | Save redis-cluster-x pods info to file"
+  lineinfile:
+    line: "{{ item['numberedRole'] }} \t{{ item['computeNode'] }} {{ item['podName'] }}\t{{ 'master for' if item['role'] == 'master' else 'replica of' }} {{ item['roleForPod'] }}"  # noqa 204
+    dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
+    create: yes
+  with_items: "{{ pods }}"
+
+- name: "save_pods_info | Save run id to file"
+  lineinfile:
+    line: "{{ run_id }}"
+    dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
+
+- name: "save_pods_info | Save timestamp to file"
+  lineinfile:
+    line: "timestamp\t{{ exec_stamp }}"
+    dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

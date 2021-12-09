@@ -1,0 +1,142 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: utility[0]
+  become: true
+  become_user: root
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+
+  pre_tasks:
+    - name: "run_benchmark | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+  tasks:
+    - name: "run_benchmark | Clear variables"
+      set_fact:
+        namespaces_counter: []
+        namespaces: []
+
+    - name: "run_benchmark | Generate namespaces indexes"
+      set_fact:
+        namespaces_counter: "{{ namespaces_counter | default([]) + [ item ] }}"
+      with_sequence: start=1 end="{{ clusters_count }}"
+
+    - name: "run_benchmark | Generate namespaces names"
+      set_fact:
+        namespaces: "{{ namespaces | default([]) + [ namespace_prefix + '%s' | format(item) ] }}"
+      loop: "{{ namespaces_counter }}"
+
+    - set_fact:
+        single_cluster_testcase: "{{ True if clusters_count|int == 1 else False }}"
+
+    - name: "run_benchmark | Create run_tests_timed job config directory"
+      file:
+        path: "{{ k8s_definitions_dir }}/{{ redis_cluster_namespace }}/run_tests_timed"
+        recurse: yes
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: redis_cluster_namespace
+
+    - set_fact:
+        timestamp_file_path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/timestamp.txt"
+
+    - name: "run_benchmark | Get timestamp from file"
+      set_fact:
+        exec_stamp: "{{ lookup('file', timestamp_file_path) }}"
+
+    - block:
+      - set_fact:
+          pods_info_file_path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/single_redis-cluster_pods_info_raw.txt"
+
+      - name: "run_benchmark | Load pods info from file"
+        set_fact:
+          pods: "{{ lookup('file', pods_info_file_path) }}"
+
+      when: single_cluster_testcase
+
+    - block:
+      - set_fact:
+          run_count: "1"
+
+      - set_fact:
+          run_tests_job_name: "bench-run-tests-{{ run_id }}-{{ run_count }}run"
+
+      - include_tasks: "include/tasks/create_job_config.yml"
+        vars:
+          job_name: "{{ run_tests_job_name }}"
+          kustomization_dir: "run_tests_timed"
+          namespace: "{{ redis_cluster_namespace }}"
+          templates_path: "{{ playbook_dir }}/templates"
+        loop: "{{ namespaces }}"
+        loop_control:
+          loop_var: redis_cluster_namespace
+
+      - include_tasks: "include/tasks/benchmark_clusters.yml"
+        vars:
+          benchmark_namespaces: "{{ namespaces }}"
+          job_name: "{{ run_tests_job_name }}"
+          k8s_definitions_dir_path: "{{ k8s_definitions_dir }}"
+
+      when: warm_up_benchmark_run
+
+    - set_fact:
+        run_count: "3"
+
+    - set_fact:
+        run_tests_job_name: "bench-run-tests-{{ run_id }}-{{ run_count }}run"
+
+    - include_tasks: "include/tasks/create_job_config.yml"
+      vars:
+        job_name: "{{ run_tests_job_name }}"
+        kustomization_dir: "run_tests_timed"
+        namespace: "{{ redis_cluster_namespace }}"
+        templates_path: "{{ playbook_dir }}/templates"
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: redis_cluster_namespace
+
+- import_playbook: "include/playbooks/run_emon.yml"
+  vars:
+    exec_stamp: "{{ hostvars[groups['utility'][0]]['exec_stamp'] }}"
+    run_id: "{{ hostvars[groups['utility'][0]]['run_id'] }}"
+  when: hostvars[groups['utility'][0]]['collect_emon_data']
+
+- hosts: utility[0]
+  become: true
+  become_user: root
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+
+  pre_tasks:
+    - name: "run_benchmark | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+  tasks:
+    - include_tasks: "include/tasks/benchmark_clusters.yml"
+      vars:
+        benchmark_namespaces: "{{ namespaces }}"
+        job_name: "{{ run_tests_job_name }}"
+        k8s_definitions_dir_path: "{{ k8s_definitions_dir }}"
+
+- import_playbook: "include/playbooks/stop_emon.yml"
+  when: hostvars[groups['utility'][0]]['collect_emon_data']
+
+- import_playbook: "include/playbooks/process_emon.yml"
+  vars:
+    exec_stamp: "{{ hostvars[groups['utility'][0]]['exec_stamp'] }}"
+    pods_info: "{{ hostvars[groups['utility'][0]]['pods'] }}"
+    processing_script_path: "{{ playbook_dir }}/../../utils"
+    run_id: "{{ hostvars[groups['utility'][0]]['run_id'] }}"
+    single_cluster_testcase: "{{ hostvars[groups['utility'][0]]['single_cluster_testcase'] }}"
+  when: hostvars[groups['utility'][0]]['collect_emon_data']
+
+- import_playbook: "include/playbooks/process_memtier_results.yml"
+  vars:
+    clusters_count: "{{ hostvars[groups['utility'][0]]['clusters_count'] }}"
+    exec_stamp: "{{ hostvars[groups['utility'][0]]['exec_stamp'] }}"
+    run_id: "{{ hostvars[groups['utility'][0]]['run_id'] }}"
+    single_cluster_testcase: "{{ hostvars[groups['utility'][0]]['single_cluster_testcase'] }}"
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

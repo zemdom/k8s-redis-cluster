@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: utility[0]
+  pre_tasks:
+    - name: "setup_k8s | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+  tasks:
+    - name: "setup_k8s | Add bitami charts repository"
+      kubernetes.core.helm_repository:
+        name: bitnami
+        repo_url: https://charts.bitnami.com/bitnami
+
+    - set_fact:
+        nodes_in_group_count: "{{ (redis_nodes_count / 2) | int }}"
+
+    - name: "setup_k8s | Label first-group compute nodes for balanced multiple-clusters testcase"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            labels:
+              computes-group: first-group
+            name: "{{ groups['computes'][item | int - 1] }}"
+        state: patched
+      with_sequence: start=1 end="{{ nodes_in_group_count | int }}"
+
+    - name: "setup_k8s | Label second-group compute nodes for balanced multiple-clusters testcase"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            labels:
+              computes-group: second-group
+            name: "{{ groups['computes'][item | int - 1] }}"
+        state: patched
+      with_sequence: start="{{ nodes_in_group_count | int + 1 }}" end="{{ redis_nodes_count | int }}"
+
+  # vi:et:sw=2 ts=2 sts=2 ft=ansible

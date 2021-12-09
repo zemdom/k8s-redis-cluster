@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: utility[0]
+  pre_tasks:
+    - name: "setup | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+  tasks:
+    - name: "setup | Install required python packages"
+      pip:
+        name: "{{ python_packages }}"
+      become: yes
+
+    - name: "setup | Install required Ansible collections"
+      shell: "ansible-galaxy collection install -r {{ playbook_dir }}/collection_requirements.yml"
+
+- hosts: computes
+  pre_tasks:
+    - name: "setup | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+    - name: "setup | Load emon specific playbook variables"
+      include_vars: "vars/emon_vars.yml"
+
+    - name: "setup | Copy kmemdax systemd unit files"
+      copy:
+         src: "{{ item }}"
+         dest: "/etc/systemd/system/"
+      with_fileglob:
+        - "{{ playbook_dir }}/../systemd_unit/dax*"
+      become: yes
+
+    - name: :"setup | Install emon"
+      block:
+      - name: "setup | Extract tarball with sep+emon"
+        unarchive:
+          src: "{{ sep_emon_tarball_sourcedir }}/{{ sep_emon_version }}.tar.gz"
+          dest: "/tmp"
+        become: true
+        become_user: root
+
+      - name: "setup | Install sep modules"
+        shell: |
+          cd /tmp/{{ sep_emon_version }}
+          ./sep-installer.sh -ni -i --accept-license
+        become: true
+        become_user: root
+      when: sep_emon_tarball_sourcedir
+
+  # vi:et:sw=2 ts=2 sts=2 ft=ansible

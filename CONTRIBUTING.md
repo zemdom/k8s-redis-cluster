@@ -13,7 +13,7 @@ Details such as OS and other components version are always appreciated.
 # Code Style
 
 * Indent with tabs (width: 8)
-* Max 90 chars per line
+* Max 160 chars per line
 
 **NOTE**: We're not using specific format tool yet - feel free to propose your favourite.
 

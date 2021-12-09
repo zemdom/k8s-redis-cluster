@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- import_playbook: destroy.yml
+- import_playbook: deploy.yml
+- import_playbook: populate.yml
+- import_playbook: run_benchmark.yml
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

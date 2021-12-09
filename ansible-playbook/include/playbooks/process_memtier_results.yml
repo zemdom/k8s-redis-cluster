@@ -1,0 +1,236 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: utility[0]
+  become: true
+  become_user: root
+
+  pre_tasks:
+    - name: "process_memtier | Fetch all facts"
+      setup: {}
+
+    - name: "process_memtier | Load playbook variables"
+      include_vars: "../../vars/vars.yml"
+
+  tasks:
+    - name: "process_memtier | Create log dir"
+      file:
+        path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}"
+        state: "directory"
+        owner: "solben"
+        group: "solben"
+
+- hosts: clients
+  become: true
+  become_user: root
+
+  pre_tasks:
+    - name: "process_memtier | Fetch all facts"
+      setup: {}
+
+    - name: "process_memtier | Load playbook variables"
+      include_vars: "../../vars/vars.yml"
+
+  tasks:
+    - find:
+        paths: "{{ client_results_dir }}"
+        pattern: "{{ run_id }}*"
+      register: results_files
+
+    - name: "process_memtier | Upload memtier_benchmark results"
+      fetch:
+        src: "{{ item.path }}"
+        dest: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/"
+        flat: yes
+      with_items: "{{ results_files.files }}"
+
+    - set_fact:
+        what_to_grep: "AGGREGATED AVERAGE RESULTS"
+
+    - block:
+      - name: "process_memtier | Get metrics for each cluster"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk -v OFS='\t\t' '{sub(".*{{ run_id }}_", "", $1); sub(".txt-Totals", "", $1); print $1, $2, $9, $10}' \
+          | sort --key 1 --version-sort
+        register: clusters_metrics_stdout
+
+      - set_fact:
+          clusters_metrics: "{{ ansible_play_hosts_all | map('extract', hostvars, ['clusters_metrics_stdout', 'stdout_lines']) | list }}"
+        run_once: true
+
+      - name: "process_memtier | Save clusters metrics header row to file"
+        lineinfile:
+          line: "#\t\t\tthroughput\t\tp99 latency\t99.9 latency"
+          dest: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt"
+          create: yes
+        delegate_to: "{{ groups['utility'][0] }}"
+
+      - name: "process_memtier | Save clusters metrics to file"
+        lineinfile:
+          line: "{{ item }}"
+          dest: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt"
+        with_items: "{{ clusters_metrics }}"
+        delegate_to: "{{ groups['utility'][0] }}"
+
+      - name: "process_memtier | Sort metrics for each cluster by namespace"
+        shell: |
+          sort --key 1 --version-sort "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt" \
+          -o "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt"
+        delegate_to: "{{ groups['utility'][0] }}"
+
+      when: not single_cluster_testcase
+
+    - name: "process_memtier | Get total throughput"
+      shell: |
+        grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+        | grep Totals | awk '{print $2}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { printf "%.2f", total }'
+      register: throughput_stdout
+
+    - name: "process_memtier | Get total p99 latency"
+      shell: |
+        grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+        | grep Totals | awk '{print $9}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }' \
+      register: p99_latency_stdout
+
+    - name: "process_memtier | Get total p99.9 latency"
+      shell: |
+        grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+        | grep Totals | awk '{print $10}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'
+      register: p99_9_latency_stdout
+
+    - name: "process_memtier | Sum metrics values from all clients"
+      set_fact:
+        throughput: "{{ ansible_play_hosts_all | map('extract', hostvars, ['throughput_stdout', 'stdout']) | map('float') | sum | round(2) }}"
+        p99_latency: "{{ ansible_play_hosts_all | map('extract', hostvars, ['p99_latency_stdout', 'stdout']) | map('float') | sum }}"
+        p99_9_latency: "{{ ansible_play_hosts_all | map('extract', hostvars, ['p99_9_latency_stdout', 'stdout']) | map('float') | sum }}"
+      run_once: true
+
+    - name: "process_memtier | Calculate mean p99 latency"
+      shell: |
+        echo "scale=4; {{ p99_latency }}/{{ clusters_count }}" | /usr/bin/bc | awk '{ printf "%.2f", $0 }'
+      register: mean_p99_latency_stdout
+      run_once: true
+
+    - name: "process_memtier | Calculate mean p99.9 latency"
+      shell: |
+        echo "scale=4; {{ p99_9_latency }}/{{ clusters_count }}" | /usr/bin/bc | awk '{ printf "%.2f", $0 }'
+      register: mean_p99_9_latency_stdout
+      run_once: true
+
+    - debug:
+        msg:
+          - "throughput: {{ throughput }}"
+          - "mean p99 latency: {{ mean_p99_latency_stdout.stdout }}"
+          - "mean p99.9 latency: {{ mean_p99_9_latency_stdout.stdout }}"
+      run_once: true
+
+    - name: "process_memtier | Save aggregated average results for multiple-clusters testcase"
+      shell: |
+        echo "Run_id: {{ run_id }}, timestamp: {{ exec_stamp }}" > "{{ run_id }}-benchmark_results_core_metrics.txt"
+        echo "" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        echo "Total throughput of n redis-clusters [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        echo "{{ throughput }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        echo "Mean p99 latency (SETs and GETs) of n redis-clusters [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        echo  "{{ mean_p99_latency_stdout.stdout }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        echo "Mean p99.9 latency (SETs and GETs) of n redis-clusters [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        echo "{{ mean_p99_9_latency_stdout.stdout }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+      args:
+        chdir: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}"
+      delegate_to: "{{ groups['utility'][0] }}"
+      when: not single_cluster_testcase
+
+    - name: "process_memtier | Save memtier results for single-cluster testcase"
+      block:
+      - name: "process_memtier | Save aggregated average results for single-cluster testcase"
+        shell: |
+          echo "Run_id: {{ run_id }}, timestamp: {{ exec_stamp }}" > "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "Total throughput of single redis-cluster [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "{{ throughput }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "p99 latency (SETs and GETs) of single redis-cluster [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo  "{{ mean_p99_latency_stdout.stdout }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "p99.9 latency (SETs and GETs) of single redis-cluster [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "{{ mean_p99_9_latency_stdout.stdout }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        args:
+          chdir: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}"
+        delegate_to: "{{ groups['utility'][0] }}"
+        run_once: true
+
+      - set_fact:
+          what_to_grep: "BEST RUN RESULTS"
+
+      - name: "process_memtier | Get total throughput"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk '{print $2}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { printf "%.2f", total }'
+        register: throughput_stdout
+
+      - name: "process_memtier | Get total p99 latency"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk '{print $9}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'
+        register: p99_latency_stdout
+
+      - name: "process_memtier | Get total p99.9 latency"
+        shell: |
+          grep "{{ what_to_grep }}" -A7 {{ client_results_dir }}/{{ run_id }}* \
+          | grep Totals | awk '{print $10}' | paste -sd+ | /usr/bin/bc | awk '{ total += $1 } END { print total }'
+        register: p99_9_latency_stdout
+
+      - name: "process_memtier | Sum metrics values from all clients"
+        set_fact:
+          throughput: "{{ ansible_play_hosts_all | map('extract', hostvars, ['throughput_stdout', 'stdout']) | map('float') | sum | round(2) }}"
+          p99_latency: "{{ ansible_play_hosts_all | map('extract', hostvars, ['p99_latency_stdout', 'stdout']) | map('float') | sum }}"
+          p99_9_latency: "{{ ansible_play_hosts_all | map('extract', hostvars, ['p99_9_latency_stdout', 'stdout']) | map('float') | sum }}"
+        run_once: true
+
+      - name: "process_memtier | Calculate mean p99 latency"
+        shell: |
+          echo "scale=4; {{ p99_latency }}/{{ clusters_count }}" | /usr/bin/bc | awk '{ printf "%.2f", $0 }'
+        register: mean_p99_latency_stdout
+        run_once: true
+
+      - name: "process_memtier | Calculate mean p99.9 latency"
+        shell: |
+          echo "scale=4; {{ p99_9_latency }}/{{ clusters_count }}" | /usr/bin/bc | awk '{ printf "%.2f", $0 }'
+        register: mean_p99_9_latency_stdout
+        run_once: true
+
+      - debug:
+          msg:
+            - "throughput: {{ throughput }}"
+            - "mean p99 latency: {{ mean_p99_latency_stdout.stdout }}"
+            - "mean p99.9 latency: {{ mean_p99_9_latency_stdout.stdout }}"
+        run_once: true
+
+      - name: "process_memtier | Save best run results for single-cluster testcase"
+        shell: |
+          echo "" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "Total throughput of single redis-cluster [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "{{ throughput }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "p99 latency (SETs and GETs) of single redis-cluster [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo  "{{ mean_p99_latency_stdout.stdout }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "p99.9 latency (SETs and GETs) of single redis-cluster [{{ what_to_grep }}]:" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+          echo "{{ mean_p99_9_latency_stdout.stdout }}" >> "{{ run_id }}-benchmark_results_core_metrics.txt"
+        args:
+          chdir: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}"
+        delegate_to: "{{ groups['utility'][0] }}"
+        run_once: true
+
+      when: single_cluster_testcase
+
+    - name: "process_memtier | Send memtier_benchmark results to s3 bucket"
+      s3_sync:
+        aws_access_key: "{{ s3_access_key }}"
+        aws_secret_key: "{{ s3_secret_key }}"
+        bucket: "{{ s3_bucket }}"
+        ec2_url: "{{ s3_endpoint }}"
+        file_root: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/"
+        key_prefix: "redis-cluster/{{ run_id }}"
+        region: "{{ s3_region }}"
+      when: s3_endpoint is defined
+      delegate_to: "{{ groups['utility'][0] }}"
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

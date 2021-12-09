@@ -1,0 +1,142 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- import_playbook: "include/playbooks/check_dimms.yml"
+
+- hosts: utility[0]
+  become: true
+  become_user: root
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+
+  pre_tasks:
+    - name: "populate | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+  tasks:
+    - name: "populate | Clear variables"
+      set_fact:
+        namespaces_counter: []
+        namespaces: []
+
+    - name: "populate | Generate namespaces indexes"
+      set_fact:
+        namespaces_counter: "{{ namespaces_counter | default([]) + [ item ] }}"
+      with_sequence: start=1 end="{{ clusters_count }}"
+
+    - name: "populate | Generate namespaces names"
+      set_fact:
+        namespaces: "{{ namespaces | default([]) + [ namespace_prefix + '%s' | format(item) ] }}"
+      loop: "{{ namespaces_counter }}"
+
+    - set_fact:
+        single_cluster_testcase: "{{ True if clusters_count|int == 1 else False }}"
+
+    - name: "populate | Get nodes with client label"
+      kubernetes.core.k8s_info:
+        kind: Node
+        label_selectors:
+          - node-type=redis-client
+      register: labeled_nodes_raw_info
+
+    - set_fact:
+        labeled_nodes_info: "{{ labeled_nodes_info | default([]) + [ item.metadata['name'] ] }}"
+      with_items: "{{ labeled_nodes_raw_info['resources'] }}"
+      no_log: true
+
+    - name: "populate | Remove old client labels"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            name: "{{ item }}"
+            labels:
+              node-type: null
+        state: patched
+      with_items: "{{ labeled_nodes_info }}"
+      when: labeled_nodes_info is defined
+
+    - name: "populate | Add client labels to nodes"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            name: "{{ item }}"
+            labels:
+              node-type: redis-client
+        state: patched
+      with_items: "{{ groups['clients'] }}"
+
+    - name: "populate | Create populate_db job config directory"
+      file:
+        path: "{{ k8s_definitions_dir }}/{{ redis_cluster_namespace }}/populate_db"
+        recurse: yes
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: redis_cluster_namespace
+
+    - set_fact:
+        populate_job_name: "redis-populate-{{ run_id }}"
+
+    - include_tasks: "include/tasks/create_job_config.yml"
+      vars:
+        job_name: "{{ populate_job_name }}"
+        kustomization_dir: "populate_db"
+        namespace: "{{ redis_cluster_namespace }}"
+        templates_path: "{{ playbook_dir }}/templates"
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: redis_cluster_namespace
+
+    - set_fact:
+        sequence_counter: 12
+
+    - include_tasks: "include/tasks/populate_clusters.yml"
+      vars:
+        job_name: "{{ populate_job_name }}"
+        population_namespaces: "{{ namespaces[(item | int - 1) * (sequence_counter | int):(item | int) * (sequence_counter | int)] }}"
+      with_sequence: start=1 end="{{ (clusters_count | int / sequence_counter | int) | round(0, 'ceil') | int }}"
+
+    - set_fact:
+        exec_stamp: "{{ ansible_date_time.epoch }}"
+
+    - include_tasks: "include/tasks/save_pods_info.yml"
+      vars:
+        namespace: "{{ redis_cluster_namespace }}"
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: redis_cluster_namespace
+
+    - name: "populate | Collect masters and replicas instances distribution"
+      shell: "{{ playbook_dir }}/utils/distribution_of_redis_masters_and_replicas_on_k8s_nodes.sh"
+      register: distribution_stdout
+
+    - name: "populate | Save distribution info to file"
+      lineinfile:
+        line: "{{ distribution_stdout.stdout }}"
+        dest: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/masters-replicas-distribution-{{ run_id }}.txt"
+        create: yes
+
+    - set_fact:
+        timestamp_file_path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/timestamp.txt"
+
+    - name: "populate | Save timestamp to file"
+      copy:
+        content: "{{ exec_stamp }}"
+        dest: "{{ timestamp_file_path }}"
+
+    - block:
+      - set_fact:
+          pods_info_file_path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/single_redis-cluster_pods_info_raw.txt"
+
+      - name: "populate | Save pods info to file"
+        copy:
+          content: "{{ pods }}"
+          dest: "{{ pods_info_file_path }}"
+
+      when: single_cluster_testcase
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

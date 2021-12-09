@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ job_name }}
+  namespace: {{ namespace }}
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      name: dbpopulate
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: generator
+        image: redislabs/memtier_benchmark:edge
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - configMapRef:
+              name: memtier
+        env:
+          - name: podname
+            valueFrom: {fieldRef: {fieldPath: metadata.name}}
+        tty: true
+        command:
+          - bash
+          - -c
+          - >
+            /usr/local/bin/memtier_benchmark
+            --run-count=1
+            --requests=allkeys
+            --server={{ cluster_ip }}
+            --port=$port
+            --threads=$threads
+            --clients=$clients
+            --pipeline=$pipeline
+            --data-size=$datasize
+            --key-pattern=$keypattern_gen
+            --key-maximum=$keymaximum_gen
+            --ratio=$ratio_gen
+            --show-config
+            --cluster-mode
+            --hide-histogram
+            2>&1 | tee /log/dbpopulate_new_{{ run_id }}_{{ namespace }}.txt
+        volumeMounts:
+        - mountPath: /log
+          name: test-volume
+      volumes:
+      - name: test-volume
+        hostPath:
+          path: /tmp
+          type: Directory
+      nodeSelector:
+        node-type: redis-client

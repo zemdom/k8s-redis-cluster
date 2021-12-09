@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- benchmark_populate_job.yml
+
+configMapGenerator:
+- name: memtier
+  namespace: {{ namespace }}
+  literals:
+    - extra=
+    - port=6379
+    - pipeline={{ pipeline }}
+    - ratio_gen=1:0
+    - threads={{ threads }}
+    - clients={{ clients }}
+    - datasize={{ datasize }}
+    - keymaximum_gen={{ requests }}  # 500M reqs in a 3 nodes cluster makes one db of ~225GB size
+    - keypattern_gen=P:P  # P:P for parallel (sequential where each client has a subset of the key-range).

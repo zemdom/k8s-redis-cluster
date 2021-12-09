@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: utility[0]
+  become: true
+  become_user: root
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+
+  pre_tasks:
+    - name: "destroy | Load playbook variables"
+      include_vars: "vars/vars.yml"
+
+  tasks:
+    - name: "destroy | Clear variables"
+      set_fact:
+        namespaces: []
+
+    - name: "destroy | Generate namespaces names"
+      set_fact:
+        namespaces: "{{ namespaces | default([]) + [ namespace_prefix + '%s' | format(item) ] }}"
+      with_sequence: start=1 end="{{ clusters_count }}"
+
+    - name: "destroy | Uninstall redis-cluster release from namespaces"
+      kubernetes.core.helm:
+        name: redis-cluster
+        release_namespace: "{{ redis_cluster_namespace }}"
+        state: absent
+        wait: true
+      loop: "{{ namespaces }}"
+      loop_control:
+        loop_var: redis_cluster_namespace
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+
+[Unit]
+Description=Reconfigure DAX device from devdax mode to a system-ram mode - delay until dax devices exist
+
+#
+# Create an entry for all the capture devices that
+# one wishes to wait to be created. These normally
+# should be udev persistent rule names to avoid
+# confusion.
+#
+# You must also update the path unit with the same
+# device names
+#
+
+ConditionPathExists=/dev/dax0.0
+ConditionPathExists=/dev/dax1.0
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl start dax.service
+RemainAfterExit=true

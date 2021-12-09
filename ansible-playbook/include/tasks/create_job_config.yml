@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- name: "create_job_config | Get redis-cluster service info"
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    namespace: "{{ namespace }}"
+    name: redis-cluster
+  register: redis_service_info
+
+- name: "create_job_config | Get redis-cluster service IP"
+  set_fact:
+    cluster_ip: "{{ redis_service_info['resources'][0]['spec']['clusterIP'] }}"
+
+- name: "create_job_config | Create {{ job_name }} job config from templates"
+  template:
+    src: "{{ item }}"
+    dest: "{{ k8s_definitions_dir }}/{{ namespace }}/{{ kustomization_dir }}/{{ item | basename | regex_replace('\\.j2$', '') }}"
+  with_fileglob:
+    - "{{ templates_path }}/{{ kustomization_dir }}/*.j2"
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

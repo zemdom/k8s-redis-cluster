@@ -96,7 +96,7 @@ echo $GIT $GIT_COMMAND
 
 FILES=$($GIT $GIT_COMMAND | ${SOURCE_ROOT}/utils/check_license/file-exceptions.sh | \
 	grep    -E -e '*\.yml$' -e '*\.j2$' -e '*\.sh$' -e '*\.py$' \
-		   -e 'inventory*' -e 'Dockerfile$' \
+		   -e 'inventory*' \
            -e '*\.path$' -e '*\.service$' -e '*\.timer$' \
            -e 'LICENSE$' -e '*\.md$' | \
 	xargs)

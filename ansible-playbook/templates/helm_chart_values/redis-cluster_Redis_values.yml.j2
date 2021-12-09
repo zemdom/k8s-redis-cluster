@@ -1,0 +1,123 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+## Bitnami Redis(TM) image version
+## ref: https://hub.docker.com/r/bitnami/redis/tags/
+image:
+  registry: {{ redis_registry }}
+  repository: {{ redis_repository }}
+  tag: {{ redis_tag }}
+  pullPolicy: IfNotPresent
+
+## Redis(TM) Cluster settings
+cluster:
+  ## Enable the creation of a Job that will execute the proper command to create the Redis(TM) Cluster.
+  init: true
+  ## Number of Redis(TM) nodes to be deployed
+  nodes: {{ redis_nodes_count }}
+  ## Parameter to be passed as --cluster-replicas to the redis-cli --cluster create
+  ## 1 means that we want a replica for every master created
+  replicas: 1
+
+redis:
+  # Whether to use AOF Persistence mode or not
+  # It is strongly recommended to use this type when dealing with clusters
+  #
+  # ref: https://redis.io/topics/persistence#append-only-file
+  # ref: https://redis.io/topics/cluster-tutorial#creating-and-using-a-redis-cluster
+  useAOFPersistence: "no"
+
+  ## Pod extra labels
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  podLabels:
+    instance-type: redis-cluster-instance
+
+  ## Additional Redis(TM) configuration for the nodes
+  ## ref: https://redis.io/topics/config
+  configmap: |
+    # RDB off
+    save ""
+    {% if multithreading == True %}
+    # multithreading - io-threads
+    io-threads-do-reads yes
+    io-threads {{ threads }}
+    {% endif %}
+
+  ## Configure extra options for Redis(TM) liveness and readiness probes
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes)
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 5
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 5
+
+{% if computes_group is defined %}
+  ## Affinity for Redis(TM) pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## Note: redis.podAffinityPreset, redis.podAntiAffinityPreset, and redis.nodeAffinityPreset will be ignored when it's set
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: computes-group
+            operator: In
+            values:
+            - {{ computes_group }}
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: instance-type
+            operator: In
+            values:
+            - redis-cluster-instance
+        topologyKey: kubernetes.io/hostname
+{% endif %}
+
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector:
+    node-role.kubernetes.io/compute: ""
+
+## Use password authentication
+usePassword: false
+
+## Enable persistence using Persistent Volume Claims
+## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+persistence:
+  enabled: false
+  storageClass:
+  accessModes:
+    - ReadWriteOnce
+  size: 1100Gi
+
+## Sysctl InitContainer
+## used to perform sysctl operation to modify Kernel settings (needed sometimes to avoid warnings)
+##
+sysctlImage:
+  enabled: true
+  mountHostSys: true
+  command:
+    - /bin/sh
+    - -c
+    - |-
+      #install_packages procps
+      #apt-get update
+      #apt-get install procps
+      #sysctl -w net.core.somaxconn=65535
+      echo never > /host-sys/kernel/mm/transparent_hugepage/enabled
+  registry: docker.io
+  repository: bitnami/minideb
+  tag: buster
+  pullPolicy: IfNotPresent

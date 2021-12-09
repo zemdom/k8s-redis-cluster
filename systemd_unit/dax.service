@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+
+[Unit]
+Description=Reconfigure DAX device from devdax mode to a system-ram mode
+Before=containerd.service docker.service kubelet.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/daxctl reconfigure-device --mode=system-ram all

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+resources:
+  - {{ k8s_definitions_dir }}/helm_chart_deployment/all.yml
+patches:
+  - path: {{ k8s_definitions_dir }}/helm_chart_deployment/redis-statefulset-container-securityContext.yml
+    target:
+      kind: StatefulSet
+      name: redis-cluster

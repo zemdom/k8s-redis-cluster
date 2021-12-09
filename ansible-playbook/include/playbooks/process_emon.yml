@@ -1,0 +1,110 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: utility[0]
+  become: true
+  become_user: root
+
+  pre_tasks:
+    - name: "process_emon | Fetch all facts"
+      setup: {}
+
+    - name: "process_emon | Load playbook variables"
+      include_vars: "../../vars/vars.yml"
+
+  tasks:
+    - name: "process_emon | Create log dir"
+      file:
+        path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}"
+        state: "directory"
+        owner: "solben"
+        group: "solben"
+
+- hosts: computes
+  pre_tasks:
+    - name: "process_emon | Fetch all facts"
+      setup: {}
+
+    - name: "process_emon | Load playbook variables"
+      include_vars: "../../vars/vars.yml"
+
+    - name: "process_emon | Load emon specific playbook variables"
+      include_vars: "../../vars/emon_vars.yml"
+
+  tasks:
+    - shell: hostname
+      register: hostname
+
+    - set_fact:
+        hostname: "{{ hostname.stdout }}"
+
+    - name: "process_emon | Process emon data"
+      docker_container:
+        name: "edp"
+        image: "{{ edp_image }}"
+        entrypoint: |
+          /bin/sh -c \
+          "edp /dev/stdin< /emonout/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat > /emonout/EDP-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.xlsx"
+        volumes:
+          - "/opt/{{ run_id }}/EMON:/emonout"
+        auto_remove: yes
+        detach: no
+
+    - block:
+      - name: "process_emon | Role for hostname from pods_info"
+        set_fact:
+          compute_role: "{{ item['numberedRole'] }}"
+        with_items: "{{ pods_info }}"
+        when: item['computeNode'] == hostname
+
+      - name: "process_emon | Add role info to processed emon data filename"
+        copy:
+          src: "/opt/{{ run_id }}/EMON/EDP-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.xlsx"
+          dest: "/opt/{{ run_id }}/EMON/EDP-{{ hostname }}-{{ run_id }}-{{ compute_role }}-{{ exec_stamp }}.xlsx"
+          remote_src: True
+        become: true
+        become_user: root
+
+      - name: "process_emon | Upload processed emon data"
+        fetch:
+          src: "/opt/{{ run_id }}/EMON/EDP-{{ hostname }}-{{ run_id }}-{{ compute_role }}-{{ exec_stamp }}.xlsx"
+          dest: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/"
+          flat: yes
+
+      when: single_cluster_testcase
+
+    - name: "process_emon | Upload processed emon data"
+      fetch:
+        src: "/opt/{{ run_id }}/EMON/EDP-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.xlsx"
+        dest: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/"
+        flat: yes
+      when: not single_cluster_testcase
+
+- hosts: utility[0]
+  become: true
+  become_user: root
+
+  tasks:
+    - name: "process_emon | Set processing script flags"
+      set_fact:
+        processing_script_flags: "{{ '--single-cluster' if single_cluster_testcase else '' }}"
+
+    - name: "process_emon | Populate excel template with processed emon data"
+      command: |
+        {{ processing_script_path }}/emon_parser_redis-cluster.py {{ processing_script_flags }} \
+        --paths {{ logdir }}/{{ log_dir_structure }}/{{ run_id }} \
+        --name {{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-results
+
+    - name: "process_emon | Send results to s3 bucket"
+      s3_sync:
+        aws_access_key: "{{ s3_access_key }}"
+        aws_secret_key: "{{ s3_secret_key }}"
+        bucket: "{{ s3_bucket }}"
+        ec2_url: "{{ s3_endpoint }}"
+        file_root: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/"
+        key_prefix: "redis-cluster/{{ run_id }}"
+        region: "{{ s3_region }}"
+      when: s3_endpoint is defined
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

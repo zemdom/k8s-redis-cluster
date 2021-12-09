@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2021, Intel Corporation
+#
+---
+- hosts: computes
+  pre_tasks:
+    - name: "check_dimms | Fetch all facts"
+      setup: {}
+
+    - name: "check_dimms | Load playbook variables"
+      include_vars: "../../vars/vars.yml"
+
+  tasks:
+    - name: "check_dimms | Get dimms firmware info"
+      shell: ipmctl show -firmware
+      become: true
+      become_user: root
+      register: firmware_info
+      ignore_errors: yes
+
+    - block:
+      - set_fact:
+          firmware_ver: "{{ firmware_ver | default([]) + [ item.split() | json_query('[2]') ] }}"
+        loop: "{{ firmware_info.stdout_lines[2:] }}"
+
+      - set_fact:
+          firmware_ver: "{{ firmware_ver | list | unique }}"
+
+      - name: "check_dimms | Ensure firmware version is the same between dimms"
+        assert:
+          that:
+            - firmware_ver | count == 1
+          fail_msg: "Different firmware versions between dimms"
+        any_errors_fatal: true
+
+      - name: "check_dimms | Fail when firmware version does not equal to target version {{ target_fw_ver }}"
+        fail:
+          msg: "Current firmware version: {{ firmware_ver[0] }} instead of: {{ target_fw_ver }}"
+        when: target_fw_ver and firmware_ver[0] != target_fw_ver
+        any_errors_fatal: true
+
+      - set_fact:
+          hosts_firmware_ver: "{{ ansible_play_hosts | map('extract', hostvars, 'firmware_ver') | list | unique }}"
+        run_once: yes
+
+      - name: "check_dimms | Ensure firmware version is the same between hosts"
+        assert:
+          that:
+            - hosts_firmware_ver | count == 1
+          fail_msg: "Different firmware versions between hosts"
+        run_once: yes
+
+      when: '"No PMem modules in the system" not in firmware_info.stdout'
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible
