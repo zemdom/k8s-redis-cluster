@@ -19,7 +19,8 @@ ENV REDIS_REPO="https://github.com/TieredMemDB/TieredMemDB.git" \
     BITNAMI_IMAGE_VERSION="6.0.9-debian-10-r7" \
     PATH="/opt/bitnami/common/bin:/opt/bitnami/redis/bin:$PATH" \
     BITNAMI_REDIS_CLUSTER_REPO=https://github.com/bitnami/bitnami-docker-redis-cluster.git \
-    BITNAMI_REDIS_CLUSTER_TAG="6.0.9-debian-10-r63"
+    BITNAMI_REDIS_CLUSTER_TAG="6.0.9-debian-10-r63" \
+    BITNAMI_REDIS_CLUSTER_VERSION="6.0"
 
 RUN set -eux; \
     \
@@ -109,12 +110,11 @@ RUN mkdir /tmp/bitnami-docker-redis-cluster; \
     git init; \
     git remote add -f origin ${BITNAMI_REDIS_CLUSTER_REPO}; \
     git config core.sparseCheckout true; \
-    echo "6.0/debian-10/prebuildfs" >> .git/info/sparse-checkout; \
-    echo "6.0/debian-10/rootfs" >> .git/info/sparse-checkout; \
+    echo "${BITNAMI_REDIS_CLUSTER_VERSION}/debian-10/prebuildfs" >> .git/info/sparse-checkout; \
+    echo "${BITNAMI_REDIS_CLUSTER_VERSION}/debian-10/rootfs" >> .git/info/sparse-checkout; \
     git pull origin ${BITNAMI_REDIS_CLUSTER_TAG} --depth 1; \
-    cd 6.0/debian-10/; \
-    cp -r prebuildfs/* /; \
-    cp -r rootfs/* /; \
+    cp -r ${BITNAMI_REDIS_CLUSTER_VERSION}/debian-10/prebuildfs/* /; \
+    cp -r ${BITNAMI_REDIS_CLUSTER_VERSION}/debian-10/rootfs/* /; \
     rm -rf /opt/bitnami-docker-redis-cluster;
 
 RUN chmod g+rwX /opt/bitnami
