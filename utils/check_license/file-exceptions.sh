@@ -5,4 +5,4 @@
 
 # file-exceptions.sh - filter out files not checked for copyright and license
 
-grep -v -E -e '.github' -e 'docker_bitnami/prebuildfs' -e 'docker_bitnami/rootfs' -e '.ansible-lint' -e 'ansible-playbook/utils/EMON_TEMPLATE_redis-cluster.xlsx' -e 'CONTRIBUTING.md'
+grep -v -E -e '.github' -e 'docker_bitnami/Dockerfile' -e '.ansible-lint' -e 'ansible-playbook/utils/EMON_TEMPLATE_redis-cluster.xlsx' -e 'CONTRIBUTING.md' -e 'LICENSE-THIRD-PARTY.md'
