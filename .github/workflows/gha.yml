@@ -30,4 +30,5 @@ jobs:
           args: "-p -c .ansible-lint"
           targets: ${{ steps.vars.outputs.ansible_files }}
           override-deps: |
+            ansible==2.9
             ansible-lint==5.0.0
