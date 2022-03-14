@@ -26,8 +26,8 @@ jobs:
 
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
-        override-deps: |
-          ansible-lint==5.4.0
         with:
           args: "-p -c .ansible-lint"
           targets: ${{ steps.vars.outputs.ansible_files }}
+          override-deps: |
+            ansible-lint==5.4.0
