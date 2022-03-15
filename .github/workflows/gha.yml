@@ -8,9 +8,9 @@ jobs:
     env:
       HOST_WORKDIR:   ${{ github.workspace }}
       LICENSE_TAG:    BSD-3-Clause
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/ansible-playbook
+    # defaults:
+      # run:
+        # working-directory: ${{ github.workspace }}/ansible-playbook
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -30,7 +30,15 @@ jobs:
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
         with:
-          args: "-p -c .ansible-lint"
+          args: "-p -c .ansible-lint --exclude ansible-playbook/include"
+          # targets: ${{ steps.vars.outputs.ansible_files }}
+          override-deps: |
+            ansible-lint==5.4.0
+
+      - name: Run ansible linter
+        uses: ansible/ansible-lint-action@master
+        with:
+          args: "-p -c .ansible-lint --project-dir ansible-playbook/include"
           # targets: ${{ steps.vars.outputs.ansible_files }}
           override-deps: |
             ansible-lint==5.4.0
