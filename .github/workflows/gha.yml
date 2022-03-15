@@ -38,7 +38,7 @@ jobs:
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
         with:
-          args: "-p -c .ansible-lint --project-dir ansible-playbook/include"
-          # targets: ${{ steps.vars.outputs.ansible_files }}
+          args: "-p -c .ansible-lint"
+          targets: ansible-playbook/include
           override-deps: |
             ansible-lint==5.4.0
