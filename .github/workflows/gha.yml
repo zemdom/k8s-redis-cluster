@@ -31,6 +31,6 @@ jobs:
         uses: ansible/ansible-lint-action@master
         with:
           args: "-p -c .ansible-lint"
-          targets: ${{ steps.vars.outputs.ansible_files }}
+          # targets: ${{ steps.vars.outputs.ansible_files }}
           override-deps: |
             ansible-lint==5.4.0
