@@ -8,6 +8,9 @@ jobs:
     env:
       HOST_WORKDIR:   ${{ github.workspace }}
       LICENSE_TAG:    BSD-3-Clause
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/ansible-playbook
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -22,7 +25,7 @@ jobs:
 
       - name: Find ansible files to lint
         id: vars
-        run: echo ::set-output name=ansible_files::$(grep -lr 'ft=ansible' ansible-playbook)
+        run: echo ::set-output name=ansible_files::$(grep -lr 'ft=ansible' .)
 
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
@@ -30,5 +33,4 @@ jobs:
           args: "-p -c .ansible-lint"
           targets: ${{ steps.vars.outputs.ansible_files }}
           override-deps: |
-            ansible==2.9
             ansible-lint==5.0.0
