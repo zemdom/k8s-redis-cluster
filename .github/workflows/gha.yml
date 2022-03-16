@@ -27,6 +27,7 @@ jobs:
         uses: ansible/ansible-lint-action@master
         with:
           args: "-p -c .ansible-lint --exclude ansible-playbook/include"
+          targets: ansible-playbook
           override-deps: |
             ansible-lint==5.4.0
 
