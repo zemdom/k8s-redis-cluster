@@ -62,7 +62,7 @@
 
       - name: "process_memtier | Save clusters metrics header row to file"
         lineinfile:
-          line: "#\t\t\tthroughput\t\tp99 latency\t99.9 latency"
+          line: "#\t\t\tthroughput\t\tp99 latency\t99.9 latency"  # noqa 203
           dest: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-benchmark_results_core_metrics_all_clusters.txt"
           create: yes
         delegate_to: "{{ groups['utility'][0] }}"
