@@ -23,26 +23,9 @@ jobs:
       - name: Check license headers
         run: $HOST_WORKDIR/utils/check_license/check-headers.sh $HOST_WORKDIR $LICENSE_TAG
 
-      - name: Find ansible files to lint
-        id: base_vars
-        run: echo ::set-output name=ansible_files::$(grep -lr 'ft=ansible' ansible-playbook)
-
-      - name: Find included ansible files to lint
-        id: extended_vars
-        run: echo ::set-output name=included_ansible_files::$(grep -lr 'ft=ansible' ansible-playbook/include)
-
-      - name: Run ansible linter for base playbooks
-        uses: ansible/ansible-lint-action@master
-        with:
-          args: "-p -c .ansible-lint --exclude ansible-playbook/include"
-          targets: ${{ steps.base_vars.outputs.ansible_files }}
-          override-deps: |
-            ansible-lint==5.4.0
-
-      - name: Run ansible linter for included tasks and playbooks
+      - name: Run ansible linter
         uses: ansible/ansible-lint-action@master
         with:
           args: "-p -c .ansible-lint"
-          targets: ${{ steps.extended_vars.outputs.included_ansible_files }}
           override-deps: |
             ansible-lint==5.4.0
