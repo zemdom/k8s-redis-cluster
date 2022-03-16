@@ -14,7 +14,7 @@
       become: yes
 
     - name: "setup | Install required Ansible collections"
-      shell: "ansible-galaxy collection install -r {{ playbook_dir }}/collection_requirements.yml"
+      shell: "ansible-galaxy collection install -r {{ playbook_dir }}/requirements.yml"
 
 - hosts: computes
   pre_tasks:
