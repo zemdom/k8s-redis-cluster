@@ -85,7 +85,7 @@
 
 - name: "save_pods_info | Save redis-cluster-x pods info to file"
   lineinfile:
-    line: "{{ item['numberedRole'] }} \t{{ item['computeNode'] }} {{ item['podName'] }}\t{{ 'master for' if item['role'] == 'master' else 'replica of' }} {{ item['roleForPod'] }}"  # noqa 204
+    line: "{{ item['numberedRole'] }} \t{{ item['computeNode'] }} {{ item['podName'] }}\t{{ 'master for' if item['role'] == 'master' else 'replica of' }} {{ item['roleForPod'] }}"  # noqa 203 204
     dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
     create: yes
   with_items: "{{ pods }}"
@@ -97,7 +97,7 @@
 
 - name: "save_pods_info | Save timestamp to file"
   lineinfile:
-    line: "timestamp\t{{ exec_stamp }}"
+    line: "timestamp\t{{ exec_stamp }}"  # noqa 203
     dest: "{{ runlogdir.path }}/pods-roles-{{ run_id }}-{{ namespace }}.txt"
 
 # vi:et:sw=2 ts=2 sts=2 ft=ansible
