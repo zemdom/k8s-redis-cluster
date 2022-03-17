@@ -8,9 +8,6 @@ jobs:
     env:
       HOST_WORKDIR:   ${{ github.workspace }}
       LICENSE_TAG:    BSD-3-Clause
-    # defaults:
-      # run:
-        # working-directory: ${{ github.workspace }}/ansible-playbook
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
