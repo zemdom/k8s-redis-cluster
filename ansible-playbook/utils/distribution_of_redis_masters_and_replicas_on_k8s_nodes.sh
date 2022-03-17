@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 
-# masters
+redis_nodes_count=$(kubectl get po -o wide -A | egrep 'redis-cluster-[0-9]{1,}' | awk -F ' {2,}' '{print $2}' | sort | uniq | wc -l)
+
 echo "---MASTERS---"
-for x in 2 3 4 5 6 8; do echo "Count of redis-masters on node:" compute-1-$x; kubectl get po -o wide -A | egrep redis-cluster-[0-2] | grep compute-1-$x | wc -l; done
+kubectl get po -o wide -A | egrep redis-cluster-[0-$((redis_nodes_count / 2 - 1))] | awk -F ' {2,}' '{print $8}' | sort | uniq -c | awk {'print "Count of redis-masters on node: "$2"\n"$1'}
 
-# replicas
 echo "---REPLICAS---"
-for x in 2 3 4 5 6 8; do echo "Count of redis-replicas on node:" compute-1-$x; kubectl get po -o wide -A | egrep redis-cluster-[3-5] | grep compute-1-$x | wc -l; done
+kubectl get po -o wide -A | egrep redis-cluster-[$((redis_nodes_count / 2))-$((redis_nodes_count - 1))] | awk -F ' {2,}' '{print $8}' | sort | uniq -c | awk {'print "Count of redis-replicas on node: "$2"\n"$1'}
