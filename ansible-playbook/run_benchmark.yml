@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - hosts: utility[0]
@@ -82,7 +82,7 @@
       when: warm_up_benchmark_run
 
     - set_fact:
-        run_count: "3"
+        run_count: "{{ run_count }}"
 
     - set_fact:
         run_tests_job_name: "bench-run-tests-{{ run_id }}-{{ run_count }}run"
