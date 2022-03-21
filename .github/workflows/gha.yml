@@ -25,7 +25,7 @@ jobs:
         run: echo ::set-output name=ansible_files::$(grep -lr 'ft=ansible' ansible-playbook)
 
       - name: Run ansible linter
-        uses: ansible/ansible-lint-action@main
+        uses: ansible/ansible-lint-action@a988f94ae932d08266bd63b28f293a0ee854442f
         with:
           args: "-p -c ansible-playbook/.ansible-lint"
           targets: ${{ steps.vars.outputs.ansible_files }}
