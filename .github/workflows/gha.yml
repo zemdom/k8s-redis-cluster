@@ -26,7 +26,7 @@ jobs:
         run: echo ::set-output name=ansible_files::$(grep -lr 'ft=ansible' ansible-playbook)
 
       - name: Run ansible linter
-        uses: ansible/ansible-lint-action@$ANSIBLE_LINT_GHA_COMMIT_SHA
+        uses: ansible/ansible-lint-action@$ANSIBLE_LINT_COMMIT_SHA
         with:
           args: "-p -c ansible-playbook/.ansible-lint"
           targets: ${{ steps.vars.outputs.ansible_files }}
