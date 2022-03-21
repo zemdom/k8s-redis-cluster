@@ -29,5 +29,3 @@ jobs:
         with:
           args: "-p -c ansible-playbook/.ansible-lint"
           targets: ${{ steps.vars.outputs.ansible_files }}
-          override-deps: |
-            ansible-lint==5.4.0
