@@ -18,7 +18,6 @@ multiple_clusters_balanced_default: True
 namespace_prefix: "redis-cluster"
 redis_nodes_count: 6
 
-run_id: "{{ lookup('env', 'run_id') }}"
 target_fw_ver_default: "01.02.00.5444"
 test_mode: "{{ lookup('env', 'test_mode') }}"
 warm_up_benchmark_run_default: False
