@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -15,14 +15,14 @@ configMapGenerator:
     - extra=
     - port=6379
     - requests=allkeys
-    - test_time=1800
+    - test_time={{ test_time }}
     - pipeline={{ pipeline }}
-    - ratio_load=1:4
+    - ratio_load={{ ratio }}
     - threads={{ threads }}
     - clients={{ clients }}
     - command=get \_\_key__
     - datasize={{ datasize }}
-    - keypattern_load=G:G  # R for uniform Random, G for Gaussian distribution, S for Sequential, P for Parallel (Sequential were each client has a subset of the key-range)
+    - keypattern_load={{ key_pattern }}  # R for uniform Random, G for Gaussian distribution, S for Sequential, P for Parallel (Sequential were each client has a subset of the key-range)
     - keymaximum_load={{ requests }}
 
 patches:

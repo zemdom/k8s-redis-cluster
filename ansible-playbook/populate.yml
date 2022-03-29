@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - import_playbook: "include/playbooks/check_dimms.yml"
@@ -15,6 +15,23 @@
       include_vars: "vars/vars.yml"
 
   tasks:
+    - name: "populate | Generate run_id variable"
+      set_fact:
+        run_id: "{{ lookup('env', 'run_id') | default((99999999 | random | to_uuid | hash('md5'))[:4], true) }}\
+                  -th{{ threads }}-cln{{ clients }}-p{{ pipeline }}-req{{ requests }}"
+
+    - name: "populate | Write run_id to group_vars"
+      lineinfile:
+        create: true
+        insertafter: EOF
+        line: "run_id: {{ run_id }}"
+        path: "{{ playbook_dir }}/group_vars/all"
+        state: present
+
+    - name: "populate | Print run_id"
+      debug:
+        var: run_id
+
     - name: "populate | Clear variables"
       set_fact:
         namespaces_counter: []

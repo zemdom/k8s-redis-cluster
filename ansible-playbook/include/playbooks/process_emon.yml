@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - hosts: utility[0]
@@ -86,9 +86,12 @@
   become_user: root
 
   tasks:
+    - set_fact:
+        computes_hostnames: "{{ ' '.join(groups['computes']) }}"
+
     - name: "process_emon | Set processing script flags"
       set_fact:
-        processing_script_flags: "{{ '--single-cluster' if single_cluster_testcase else '' }}"
+        processing_script_flags: "{{ '' if single_cluster_testcase else '--multiple-clusters-hostnames ' + computes_hostnames }}"
 
     - name: "process_emon | Populate excel template with processed emon data"
       command: |

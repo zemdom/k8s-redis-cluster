@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 
 import os
 import sys
@@ -35,30 +35,21 @@ def parse_emon_workbook(name):
 
 def fill_in_workbook(_file, types, script, run_number, all_compared_runs_number):
     emon_params = parse_emon_workbook(_file)
-    for type in types:
+    for column_index, type in enumerate(types):
         if type in _file.lower():
-            col = types[type]
-            col = (col * all_compared_runs_number) + col + run_number + 2
+            col = (column_index * all_compared_runs_number) + column_index + run_number + 2
 
-            for i, r in enumerate(emon_params):
-                script.cell(row=i+1, column=col).value = r
+            for row_index, cell_value in enumerate(emon_params):
+                script.cell(row=row_index+1, column=col).value = cell_value
 
-single_cluster_types = {
-    'master1': 0,
-    'master2': 1,
-    'master3': 2,
-    'replica1': 3,
-    'replica2': 4,
-    'replica3': 5
-}
-multiple_clusters_types = {
-    'compute-1-2': 0,
-    'compute-1-3': 1,
-    'compute-1-4': 2,
-    'compute-1-5': 3,
-    'compute-1-6': 4,
-    'compute-1-8': 5
-}
+single_cluster_types = [
+    'master1',
+    'master2',
+    'master3',
+    'replica1',
+    'replica2',
+    'replica3'
+]
 
 template_name = join(dirname(sys.argv[0]), 'EMON_TEMPLATE_redis-cluster.xlsx')
 labels = get_labels()
@@ -72,7 +63,7 @@ def main():
     parser.add_argument(
         '-n', '--name', dest='result_file_name', default='results', help='Name of the aggregated result file name')
     parser.add_argument(
-        '--single-cluster', dest='single_cluster', default=False, help='Create comparison of redis-cluster instances instead of compute nodes', action='store_true')
+        '--multiple-clusters-hostnames', dest='multiple_clusters_hostnames', help='Create comparison of k8s compute nodes instead of redis-cluster instances', nargs='+', default=[], required=False)
     args = vars(parser.parse_args())
 
     paths = args['paths']
@@ -83,7 +74,7 @@ def main():
     directories = [[obj for obj in directory if isfile(obj) and obj.endswith('.xlsx')] for directory in directories]
     all_compared_runs_number = len(directories) - 1
 
-    types = single_cluster_types if args['single_cluster'] else multiple_clusters_types
+    types = args['multiple_clusters_hostnames'] if args['multiple_clusters_hostnames'] else single_cluster_types
 
     for run_number, _directory_content in enumerate(directories):
         for _file in _directory_content:

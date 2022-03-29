@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - hosts: utility[0]
@@ -31,5 +31,11 @@
       loop: "{{ namespaces }}"
       loop_control:
         loop_var: redis_cluster_namespace
+
+    - name: "destroy | Remove run_id from group_vars"
+      lineinfile:
+        path: "{{ playbook_dir }}/group_vars/all"
+        regexp: "^run_id:"
+        state: absent
 
 # vi:et:sw=2 ts=2 sts=2 ft=ansible

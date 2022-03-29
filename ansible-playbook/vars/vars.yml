@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 k8s_definitions_dir: "/opt/tmdb"
@@ -18,7 +18,6 @@ multiple_clusters_balanced_default: True
 namespace_prefix: "redis-cluster"
 redis_nodes_count: 6
 
-run_id: "{{ lookup('env', 'run_id') }}"
 target_fw_ver_default: "01.02.00.5444"
 test_mode: "{{ lookup('env', 'test_mode') }}"
 warm_up_benchmark_run_default: False
@@ -36,6 +35,10 @@ clients_default: 3
 datasize_default: 1024
 pipeline_default: 1
 requests_default: 150000000
+run_count_default: 3
+test_time_default: 1800
+ratio_default: "1:4"
+key_pattern_default: "G:G"
 
 # Registry specific - Redis
 redis_registry_default: "docker.io"
@@ -54,16 +57,20 @@ clusters_count: "{{ lookup('env', 'clusters_count') | default(clusters_count_def
 collect_emon_data: "{{ lookup('env', 'collect_emon_data') | default(collect_emon_data_default, true) }}"
 datasize: "{{ lookup('env', 'datasize') | default(datasize_default, true) }}"
 dram_pmem_ratio: "{{ lookup('env', 'dram_pmem_ratio') | default(dram_pmem_ratio_default, true) }}"
+key_pattern: "{{ lookup('env', 'key_pattern') | default(key_pattern_default, true) }}"
 logdir: "{{ lookup('env', 'logdir') | default(logdir_default, true) }}"
 multiple_clusters_balanced: "{{ lookup('env', 'multiple_clusters_balanced') | default(multiple_clusters_balanced_default, true) }}"
 multithreading: "{{ lookup('env', 'multithreading') | default(multithreading_default, true) }}"
 pmem_variant: "{{ lookup('env', 'pmem_variant') | default(pmem_variant_default, true) }}"
 pipeline: "{{ lookup('env', 'pipeline') | default(pipeline_default, true) }}"
+ratio: "{{ lookup('env', 'ratio') | default(ratio_default, true) }}"
 redis_registry: "{{ lookup('env', 'redis_registry') | default(redis_registry_default, true) }}"
 redis_repository: "{{ lookup('env', 'redis_repository') | default(redis_repository_default, true) }}"
 redis_tag: "{{ lookup('env', 'redis_tag') | default(redis_tag_default, true) }}"
 requests: "{{ lookup('env', 'requests') | default(requests_default, true) }}"
+run_count: "{{ lookup('env', 'run_count') | default(run_count_default, true) }}"
 target_fw_ver: "{{ lookup('env', 'target_fw_ver') | default(target_fw_ver_default, true) }}"
+test_time: "{{ lookup('env', 'test_time') | default(test_time_default, true) }}"
 threads: "{{ lookup('env', 'threads') | default(threads_default, true) }}"
 tmdb_registry: "{{ lookup('env', 'tmdb_registry') | default(tmdb_registry_default, true) }}"
 tmdb_repository: "{{ lookup('env', 'tmdb_repository') | default(tmdb_repository_default, true) }}"
