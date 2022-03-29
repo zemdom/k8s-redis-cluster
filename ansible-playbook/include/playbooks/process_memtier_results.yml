@@ -222,7 +222,7 @@
       when: single_cluster_testcase
 
     - name: "process_memtier | Send memtier_benchmark results to s3 bucket"
-      s3_sync:
+      community.aws.s3_sync:
         aws_access_key: "{{ s3_access_key }}"
         aws_secret_key: "{{ s3_secret_key }}"
         bucket: "{{ s3_bucket }}"
