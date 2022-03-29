@@ -27,4 +27,4 @@ jobs:
       - name: Run ansible linter
         uses: ansible/ansible-lint-action@v6.0.2
         with:
-          args: "--version"
+          args: "-cansible-playbook/.ansible-lint"

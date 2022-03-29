@@ -1,5 +1,9 @@
 ---
 
+# Mock modules or roles in order to pass ansible-playbook --syntax-check
+mock_modules:
+  - community.aws.s3_sync
+
 # This makes linter to fully ignore rules/tags listed below
 skip_list:
   - '208'  # File permissions unset or incorrect
