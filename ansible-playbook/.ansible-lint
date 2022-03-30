@@ -11,6 +11,7 @@ skip_list:
   - '305'  # Use shell only when shell functionality is required
   - '306'  # Shells that use pipes should set the pipefail option
   - '502'  # All tasks should be named
+  - fqcn-builtins # Use FQCN for builtin actions
 
 # List of additional kind:pattern to be added at the top of the default
 # match list, first match determines the file kind.
