@@ -28,7 +28,7 @@ jobs:
         uses: ansible/ansible-lint-action@v4-eol
         with:
           args: "-p -c .ansible-lint"
-          targets: ${{ steps.vars.outputs.ansible_files }}
-        override-deps: |
+          override-deps: |
             ansible==2.9.17
             ansible-lint==5.4.0
+          targets: ${{ steps.vars.outputs.ansible_files }}
