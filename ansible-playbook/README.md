@@ -1,5 +1,5 @@
 [//]: # (SPDX-License-Identifier: BSD-3-Clause)
-[//]: # (Copyright 2021, Intel Corporation)
+[//]: # (Copyright 2021-2022, Intel Corporation)
 
 # redis-cluster and memtier_benchmark on k8s playbooks
 
@@ -49,6 +49,9 @@ To run multiple clusters testcase, the `clusters_count` variable needs to be set
 For a single cluster case, cluster objects are deployed to `redis-cluster1` k8s namespace.\
 For multiple clusters, each redis-cluster is created in separate namespace named according to the convention: `redis-cluster<cluster-number>`.
 
+#### Test run identifier
+By default the value of `run_id` variable is set according to the convention: `<four-character-random-hash>-th{{ threads }}-cln{{ clients }}-p{{ pipeline }}-req{{ requests }}`. It can be accessed after execution of `populate.yml` playbook in `group_vars/all` file.
+
 ### After execution
 
 #### Collecting results
@@ -82,12 +85,12 @@ clusters_count=<optional> test_mode=<redis_or_tmdb> ansible-playbook -i inventor
 ```shell
 clusters_count=<optional> run_id=<run_identifier> ansible-playbook -i inventory populate.yml
 ```
-> For this step you can modify [memtier_benchmark specific](#memtier_benchmark-specific) variables.
+> For this step you can modify selected [memtier_benchmark specific](#memtier_benchmark-specific) variables.
 
 \
-**3. Run memtier_benchmark** (use the same `run_id` as in the population step):
+**3. Run memtier_benchmark**:
 ```shell
-clusters_count=<optional> run_id=<run_identifier> ansible-playbook -i inventory run_benchmark.yml [--extra-vars "@vars/s3_vars.yml"]
+clusters_count=<optional> ansible-playbook -i inventory run_benchmark.yml [--extra-vars "@vars/s3_vars.yml"]
 ```
 > For this step you can modify [memtier_benchmark specific](#memtier_benchmark-specific) variables.
 
@@ -105,11 +108,11 @@ clusters_count=<optional> test_mode=<redis_or_tmdb> run_id=<run_identifier> ansi
 ## Environment variables (selection)
 
 ### General
-* `run_id`
 * `test_mode`: Possible values - `redis` or `tmdb`;
 * `clusters_count`: Number of redis-clusters to deploy (default: `1`);
 * `collect_emon_data`: Specifies whether to run EMON during benchmark execution (default: `False`);
 * `multiple_clusters_balanced`: Specifies whether to run balanced testcase (default: `True`) (further description in [General info](#general-info));
+* `run_id`: Test run identifier (default: auto-generated value) (further description in [Test run identifier](#test-run-identifier));
 * `warm_up_benchmark_run`: Specifies whether to run one warm-up benchmark run before test execution (default: `False`);
 
 ### Redis & TieredMemDB specific
@@ -119,10 +122,15 @@ clusters_count=<optional> test_mode=<redis_or_tmdb> run_id=<run_identifier> ansi
 * `pmem_variant`: Specifies variant of Persistent Memory allocation (default: `multiple`)
 
 ### memtier_benchmark specific
-* `clients`
-* `datasize`
-* `pipeline`
-* `requests`
+* `clients`: Number of clients per thread (default: `3`);
+* `datasize`: Object data size in bytes (default: `1024`);
+* `key_pattern`: Set:Get requests pattern used for benchmark execution (default: `G:G`);
+* `pipeline`: Number of concurrent pipelined requests (default: `1`);
+* `ratio`: Set:Get requests ratio used for benchmark execution (default: `1:4`);
+* `requests`: Number of total requests per client (default: `150000000`);
+* `run_count`: Number of full-test iterations to perform during benchmark execution (default: `3`);
+* `test_time`: Number of seconds to run one full-test iteration during benchmark execution (default: `1800`);
+* `threads`: Number of threads (default: `8`);
 
 ### S3 bucket specific
 * `S3_ACCESS_KEY`
