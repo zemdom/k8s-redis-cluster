@@ -25,7 +25,10 @@ jobs:
         run: echo ::set-output name=ansible_files::$(grep -lr 'ft=ansible' ansible-playbook)
 
       - name: Run ansible linter
-        uses: ansible/ansible-lint-action@master
+        uses: ansible/ansible-lint-action@v4-eol
         with:
           args: "-p -c .ansible-lint"
+          override-deps: |
+            ansible==2.9.17
+            ansible-lint==4.2.0
           targets: ${{ steps.vars.outputs.ansible_files }}
