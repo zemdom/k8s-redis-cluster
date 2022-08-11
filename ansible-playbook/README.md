@@ -146,9 +146,9 @@ clusters_count=<optional> test_mode=<redis_or_tmdb> run_id=<run_identifier> ansi
 * `S3_SECRET_KEY`
 
 ### Registry specific - Redis
-* `redis_registry`
-* `redis_repository`
-* `redis_tag`
+* `redis_registry`: (default: `docker.io`);
+* `redis_repository`: (default: `bitnami/redis-cluster`);
+* `redis_tag`: (default: `6.2.6-debian-10-r196`);
 
 ### Registry specific - TieredMemDB
 * `tmdb_registry`

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2022, Intel Corporation
 #
 ---
-## Bitnami Redis(TM) image version
+## Bitnami Redis&trade; image version
 ## ref: https://hub.docker.com/r/bitnami/redis/tags/
 image:
   registry: {{ tmdb_registry }}
@@ -10,30 +10,31 @@ image:
   tag: {{ tmdb_tag }}
   pullPolicy: IfNotPresent
 
-## Redis(TM) Cluster settings
+## Redis&trade; Cluster settings
 cluster:
-  ## Enable the creation of a Job that will execute the proper command to create the Redis(TM) Cluster.
+  ## @param cluster.init Enable the initialization of the Redis&trade; Cluster
   init: true
-  ## Number of Redis(TM) nodes to be deployed
+  ## Number of Redis&trade; nodes to be deployed
   nodes: {{ redis_nodes_count }}
+  ## @param cluster.replicas Number of replicas for every master in the cluster
   ## Parameter to be passed as --cluster-replicas to the redis-cli --cluster create
   ## 1 means that we want a replica for every master created
   replicas: 1
 
+## @section Redis&trade; statefulset parameters
 redis:
-  # Whether to use AOF Persistence mode or not
-  # It is strongly recommended to use this type when dealing with clusters
-  #
-  # ref: https://redis.io/topics/persistence#append-only-file
-  # ref: https://redis.io/topics/cluster-tutorial#creating-and-using-a-redis-cluster
+  ## @param redis.useAOFPersistence Whether to use AOF Persistence mode or not
+  ## It is strongly recommended to use this type when dealing with clusters
+  ## ref: https://redis.io/topics/persistence#append-only-file
+  ## ref: https://redis.io/topics/cluster-tutorial#creating-and-using-a-redis-cluster
   useAOFPersistence: "no"
 
-  ## Pod extra labels
+  ## @param redis.podLabels Additional labels for Redis&trade; pod
   ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
   podLabels:
     instance-type: redis-cluster-instance
 
-  ## Additional Redis(TM) configuration for the nodes
+  ## @param redis.configmap Additional Redis&trade; configuration for the nodes
   ## ref: https://redis.io/topics/config
   configmap: |
     # By default Redis use only-dram configuration.
@@ -62,7 +63,7 @@ redis:
     # By default Redis uses a "single" variant.
     pmem-variant {{ pmem_variant }}
 
-  ## Configure extra options for Redis(TM) liveness and readiness probes
+  ## Configure extra options for Redis&trade; liveness probes
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes)
   livenessProbe:
     enabled: true
@@ -71,16 +72,19 @@ redis:
     timeoutSeconds: 5
     successThreshold: 1
     failureThreshold: 5
+
+  ## Configure extra options for Redis&trade; readiness probes
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes)
   readinessProbe:
     enabled: true
     initialDelaySeconds: 10
     periodSeconds: 5
     timeoutSeconds: 1
     successThreshold: 1
-    failureThreshold: 5
+    failureThreshold: 25
 
 {% if computes_group is defined %}
-  ## Affinity for Redis(TM) pods assignment
+  ## @param redis.affinity Affinity settings for Redis&trade; pod assignment
   ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ## Note: redis.podAffinityPreset, redis.podAntiAffinityPreset, and redis.nodeAffinityPreset will be ignored when it's set
   affinity:
@@ -104,28 +108,28 @@ redis:
         topologyKey: kubernetes.io/hostname
 {% endif %}
 
+  ## @param redis.nodeSelector Node labels for Redis&trade; pods assignment
   ## ref: https://kubernetes.io/docs/user-guide/node-selection/
   nodeSelector:
     node-role.kubernetes.io/compute: ""
 
-## Use password authentication
+## @param usePassword Use password authentication
 usePassword: false
 
 ## Enable persistence using Persistent Volume Claims
-## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+## ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
 persistence:
+  storageClass: "-"
   enabled: false
-  storageClass:
-  accessModes:
-    - ReadWriteOnce
-  size: 1100Gi
 
 ## Sysctl InitContainer
-## used to perform sysctl operation to modify Kernel settings (needed sometimes to avoid warnings)
-##
+## Used to perform sysctl operation to modify Kernel settings (needed sometimes to avoid warnings)
 sysctlImage:
+  ## @param sysctlImage.enabled Enable an init container to modify Kernel settings
   enabled: true
+  ## @param sysctlImage.mountHostSys Mount the host `/sys` folder to `/host-sys`
   mountHostSys: true
+  ## @param sysctlImage.command sysctlImage command to execute
   command:
     - /bin/sh
     - -c
@@ -136,6 +140,6 @@ sysctlImage:
       #sysctl -w net.core.somaxconn=65535
       echo never > /host-sys/kernel/mm/transparent_hugepage/enabled
   registry: docker.io
-  repository: bitnami/minideb
-  tag: buster
+  repository: bitnami/bitnami-shell
+  tag: 10-debian-10-r408
   pullPolicy: IfNotPresent

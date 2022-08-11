@@ -36,8 +36,8 @@
 
     - name: "deploy | Set config files paths for Redis and TieredMemDB"
       set_fact:
-        redis_chart_values: "{{ playbook_dir }}/templates/helm_chart_values/redis-cluster_Redis_values.yml.j2"
-        tmdb_chart_values: "{{ playbook_dir }}/templates/helm_chart_values/redis-cluster_TieredMemDB_values.yml.j2"
+        redis_chart_values: "{{ playbook_dir }}/templates/helm_chart_values/redis-cluster_Redis_values_{{ chart_version }}.yml.j2"
+        tmdb_chart_values: "{{ playbook_dir }}/templates/helm_chart_values/redis-cluster_TieredMemDB_values_{{ chart_version }}.yml.j2"
         multiple_clusters_chart_configs: [ "first-group", "second-group" ]
 
     - name: "deploy | Use config for {{ 'Redis' if test_mode == 'redis' else 'TieredMemDB' }}"
@@ -163,5 +163,9 @@
         loop_var: redis_cluster_namespace
       retries: 10
       delay: 30
+
+    - name: "deploy | Wait for redis-cluster deployments to be ready"
+      pause:
+        seconds: 120
 
 # vi:et:sw=2 ts=2 sts=2 ft=ansible
