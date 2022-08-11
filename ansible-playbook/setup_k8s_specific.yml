@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - hosts: utility[0]
@@ -15,6 +15,56 @@
 
     - set_fact:
         nodes_in_group_count: "{{ (redis_nodes_count / 2) | int }}"
+
+    - name: "setup_k8s | Get nodes with first-group label"
+      kubernetes.core.k8s_info:
+        kind: Node
+        label_selectors:
+          - computes-group=first-group
+      register: first_nodes_raw_info
+
+    - set_fact:
+        first_nodes_info: "{{ first_nodes_info | default([]) + [ item.metadata['name'] ] }}"
+      with_items: "{{ first_nodes_raw_info['resources'] }}"
+      no_log: true
+
+    - name: "setup_k8s | Remove old first-group labels"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            name: "{{ item }}"
+            labels:
+              computes-group: null
+        state: patched
+      with_items: "{{ first_nodes_info }}"
+      when: first_nodes_info is defined
+
+    - name: "setup_k8s | Get nodes with second-group label"
+      kubernetes.core.k8s_info:
+        kind: Node
+        label_selectors:
+          - computes-group=second-group
+      register: second_nodes_raw_info
+
+    - set_fact:
+        second_nodes_info: "{{ second_nodes_info | default([]) + [ item.metadata['name'] ] }}"
+      with_items: "{{ second_nodes_raw_info['resources'] }}"
+      no_log: true
+
+    - name: "setup_k8s | Remove old second-group labels"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            name: "{{ item }}"
+            labels:
+              computes-group: null
+        state: patched
+      with_items: "{{ second_nodes_info }}"
+      when: second_nodes_info is defined
 
     - name: "setup_k8s | Label first-group compute nodes for balanced multiple-clusters testcase"
       kubernetes.core.k8s:
