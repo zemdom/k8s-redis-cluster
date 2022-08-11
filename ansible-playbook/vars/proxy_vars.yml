@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright 2022, Intel Corporation
+#
+---
+no_proxy_default: ""
+proxy_default: ""
+
+no_proxy: "{{ lookup('env', 'no_proxy') | default(no_proxy_default, true) }}"
+proxy: "{{ lookup('env', 'proxy') | default(proxy_default, true) }}"
+
+# vi:et:sw=2 ts=2 sts=2 ft=ansible

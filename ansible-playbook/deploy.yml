@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - hosts: utility[0]
@@ -11,6 +11,9 @@
   pre_tasks:
     - name: "deploy | Load playbook variables"
       include_vars: "vars/vars.yml"
+
+    - name: "deploy | Load proxy specific playbook variables"
+      include_vars: "vars/proxy_vars.yml"
 
   tasks:
     - name: "deploy | Clear variables"
@@ -77,6 +80,9 @@
           --post-renderer "{{ playbook_dir }}/templates/helm_chart_deployment/helm_post_renderer_hook.sh"
         environment:
           KUSTOMIZE_DIR: "{{ k8s_definitions_dir }}/helm_chart_deployment"
+          http_proxy: "{{ proxy }}"
+          https_proxy: "{{ proxy }}"
+          no_proxy: "{{ no_proxy }}"
         loop: "{{ namespaces }}"
         loop_control:
           loop_var: redis_cluster_namespace
@@ -106,6 +112,9 @@
           --post-renderer "{{ playbook_dir }}/templates/helm_chart_deployment/helm_post_renderer_hook.sh"
         environment:
           KUSTOMIZE_DIR: "{{ k8s_definitions_dir }}/helm_chart_deployment"
+          http_proxy: "{{ proxy }}"
+          https_proxy: "{{ proxy }}"
+          no_proxy: "{{ no_proxy }}"
         loop: "{{ namespaces }}"
         loop_control:
           loop_var: redis_cluster_namespace
@@ -132,6 +141,9 @@
           --post-renderer "{{ playbook_dir }}/templates/helm_chart_deployment/helm_post_renderer_hook.sh"
         environment:
           KUSTOMIZE_DIR: "{{ k8s_definitions_dir }}/helm_chart_deployment"
+          http_proxy: "{{ proxy }}"
+          https_proxy: "{{ proxy }}"
+          no_proxy: "{{ no_proxy }}"
         loop: "{{ namespaces }}"
         loop_control:
           loop_var: redis_cluster_namespace

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - hosts: utility[0]
@@ -7,14 +7,25 @@
     - name: "setup | Load playbook variables"
       include_vars: "vars/vars.yml"
 
+    - name: "setup | Load proxy specific playbook variables"
+      include_vars: "vars/proxy_vars.yml"
+
   tasks:
     - name: "setup | Install required python packages"
       pip:
         name: "{{ python_packages }}"
       become: yes
+      environment:
+        http_proxy: "{{ proxy }}"
+        https_proxy: "{{ proxy }}"
+        no_proxy: "{{ no_proxy }}"
 
     - name: "setup | Install required Ansible collections"
       shell: "ansible-galaxy collection install -r {{ playbook_dir }}/collection_requirements.yml"
+      environment:
+        http_proxy: "{{ proxy }}"
+        https_proxy: "{{ proxy }}"
+        no_proxy: "{{ no_proxy }}"
 
 - hosts: computes
   pre_tasks:

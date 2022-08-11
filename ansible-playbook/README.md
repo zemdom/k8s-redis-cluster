@@ -37,6 +37,9 @@ To export benchmark results to S3 bucket right after testcase run, specify [S3 b
 clusters_count=<optional> run_id=<run_identifier> ansible-playbook -i inventory run_benchmark.yml --extra-vars "@vars/s3_vars.yml"
 ```
 
+#### Preparing for running playbooks behind proxy server
+To run playbooks behind proxy, specify default values of [Proxy specific](#proxy-specific) variables in `vars/proxy_vars.yml`. Then, invoke playbooks as usual (as described in [How to run](#how-to-run) section).
+
 ### Testcase execution
 
 #### Running single cluster testcase
@@ -147,3 +150,7 @@ clusters_count=<optional> test_mode=<redis_or_tmdb> run_id=<run_identifier> ansi
 * `tmdb_registry`
 * `tmdb_repository`
 * `tmdb_tag`
+
+### Proxy specific
+* `no_proxy`
+* `proxy`
