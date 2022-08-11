@@ -1,15 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 edp_image_default: ""
 edp_metrics_dir_default: "/opt/emon"
+emon_events_file_default: ""
 emon_events_file_dir_default: ""
 sep_emon_tarball_sourcedir_default: ""
 sep_emon_version_default: ""
 
 edp_image: "{{ lookup('env', 'edp_image') | default(edp_image_default, true) }}"
 edp_metrics_dir: "{{ lookup('env', 'edp_metrics_dir') | default(edp_metrics_dir_default, true) }}"
+emon_events_file: "{{ lookup('env', 'emon_events_file') | default(emon_events_file_default, true) }}"
 emon_events_file_dir: "{{ lookup('env', 'emon_events_file_dir') | default(emon_events_file_dir_default, true) }}"
 sep_emon_tarball_sourcedir: "{{ lookup('env', 'sep_emon_tarball_sourcedir') | default(sep_emon_tarball_sourcedir_default, true) }}"
 sep_emon_version: "{{ lookup('env', 'sep_emon_version') | default(sep_emon_version_default, true) }}"

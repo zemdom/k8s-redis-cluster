@@ -92,8 +92,9 @@
         processing_script_flags: "{{ '' if single_cluster_testcase else '--multiple-clusters-hostnames ' + computes_hostnames }}"
 
     - name: "process_emon | Populate excel template with processed emon data"
-      command: |
-        {{ processing_script_path }}/emon_parser_redis-cluster.py {{ processing_script_flags }} \
+      shell: |
+        {{ playbook_dir }}/../../redis-cluster-venv/bin/python3 {{ processing_script_path }}/emon_parser_redis-cluster.py {{ processing_script_flags }} \
+        --pmem-generation {{ pmem_generation }} \
         --paths {{ logdir }}/{{ log_dir_structure }}/{{ run_id }} \
         --name {{ logdir }}/{{ log_dir_structure }}/{{ run_id }}/{{ run_id }}-results
 

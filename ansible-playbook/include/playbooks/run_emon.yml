@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - hosts: computes
@@ -68,8 +68,8 @@
 
     - name: "run_emon | Get *-events.txt file"
       copy:
-        src: "{{ emon_events_file_dir }}/clx-2s-events.txt"
-        dest: "{{ edp_metrics_dir }}/clx-2s-events.txt"
+        src: "{{ emon_events_file_dir }}/{{ emon_events_file }}"
+        dest: "{{ edp_metrics_dir }}/{{ emon_events_file }}"
       become: yes
 
     - name: "run_emon | Check if SEP module is already loaded"
@@ -92,7 +92,7 @@
     - name: "run_emon | Run emon and write to emon.dat"
       shell: |
         /opt/intel/sep/bin64/emon -v -t1 -l0 -i \
-        {{ edp_metrics_dir }}/clx-2s-events.txt > /opt/{{ run_id }}/EMON/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat &
+        {{ edp_metrics_dir }}/{{ emon_events_file }} > /opt/{{ run_id }}/EMON/emon-{{ hostname }}-{{ run_id }}-{{ exec_stamp }}.dat &
       async: 10
       poll: 0
       become: yes
