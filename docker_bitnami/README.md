@@ -1,11 +1,11 @@
 [//]: # (SPDX-License-Identifier: BSD-3-Clause)
-[//]: # (Copyright 2021, Intel Corporation)
+[//]: # (Copyright 2021-2022, Intel Corporation)
 
 # tieredmemdb-bitnami Docker image
 
-Please use this Dockefile and accompanying scripts in subdirectories to build an image that will work with [Bitnami redis-cluster](https://github.com/bitnami/charts/tree/master/bitnami/redis-cluster) Docker image.
+Please use Dockefiles in this directory to build images that will work with [Bitnami redis-cluster](https://github.com/bitnami/charts/tree/master/bitnami/redis-cluster) Docker image (versions 6.0.9 and 6.2.6).
 
-TieredMemDB is a fork of Redis, adjusted to store objects on both Intel Optane Persistent Memory and DRAM. TieredMemDB is using PMem AppDirect volatile mode. TieredMemDB requires Linux kernel 5.1 or higher in order to take advantage of KMEM DAX feature which is used to expose PMem device as a system-ram.   
+TieredMemDB is a fork of Redis, adjusted to store objects on both Intel Optane Persistent Memory and DRAM. TieredMemDB is using PMem AppDirect volatile mode (KMEM DAX). TieredMemDB requires Linux kernel 5.1 or higher in order to take advantage of KMEM DAX feature which is used to expose PMem device as a system-ram.
 > Note: To enable `--mode=system-ram` via `daxctl`, please refer to [README](../systemd_unit/README.md) in `systemd_unit` directory of this repository.  
 
 ## How to use the image?
