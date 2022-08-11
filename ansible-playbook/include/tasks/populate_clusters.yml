@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 - set_fact:
@@ -9,7 +9,7 @@
 
 - name: "populate_clusters | Deploy {{ job_name }} jobs inside namespaces"
   kubernetes.core.k8s:
-    resource_definition: "{{ lookup('kubernetes.core.kustomize', dir=k8s_definitions_dir + '/' + redis_cluster_namespace + '/populate_db', binary_path='/usr/local/bin/kustomize') }}"  # noqa 204
+    resource_definition: "{{ lookup('kubernetes.core.kustomize', dir=k8s_definitions_dir + '/' + redis_cluster_namespace + '/populate_db') }}"
     state: present
   ignore_errors: yes
   register: deployed_jobs_names_stdout
