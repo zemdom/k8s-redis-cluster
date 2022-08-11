@@ -58,6 +58,7 @@
           ./sep-installer.sh -ni -i --accept-license
         become: true
         become_user: root
-      when: sep_emon_tarball_sourcedir
+
+      when: sep_emon_tarball_sourcedir | bool
 
   # vi:et:sw=2 ts=2 sts=2 ft=ansible

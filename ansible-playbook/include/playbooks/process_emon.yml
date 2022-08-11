@@ -18,8 +18,6 @@
       file:
         path: "{{ logdir }}/{{ log_dir_structure }}/{{ run_id }}"
         state: "directory"
-        owner: "solben"
-        group: "solben"
 
 - hosts: computes
   pre_tasks:
