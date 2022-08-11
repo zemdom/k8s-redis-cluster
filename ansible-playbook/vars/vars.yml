@@ -52,7 +52,7 @@ tmdb_tag_default: ""
 # PMem specific
 pmem_generation_default: 2
 target_fw_ver: "{{ target_fw_ver_all_generations[pmem_generation] }}"
-target_fw_ver_all_generations: 
+target_fw_ver_all_generations:
   "1": "01.02.00.5444"
   "2": "02.02.00.1553"
 
