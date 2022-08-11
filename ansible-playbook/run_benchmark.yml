@@ -31,6 +31,43 @@
     - set_fact:
         single_cluster_testcase: "{{ True if clusters_count|int == 1 else False }}"
 
+    - name: "run_benchmark | Get nodes with client label"
+      kubernetes.core.k8s_info:
+        kind: Node
+        label_selectors:
+          - node-type=redis-client
+      register: labeled_nodes_raw_info
+
+    - set_fact:
+        labeled_nodes_info: "{{ labeled_nodes_info | default([]) + [ item.metadata['name'] ] }}"
+      with_items: "{{ labeled_nodes_raw_info['resources'] }}"
+      no_log: true
+
+    - name: "run_benchmark | Remove old client labels"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            name: "{{ item }}"
+            labels:
+              node-type: null
+        state: patched
+      with_items: "{{ labeled_nodes_info }}"
+      when: labeled_nodes_info is defined
+
+    - name: "run_benchmark | Add client labels to nodes"
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Node
+          metadata:
+            name: "{{ item }}"
+            labels:
+              node-type: redis-client
+        state: patched
+      with_items: "{{ groups['clients'] }}"
+
     - name: "run_benchmark | Create run_tests_timed job config directory"
       file:
         path: "{{ k8s_definitions_dir }}/{{ redis_cluster_namespace }}/run_tests_timed"
