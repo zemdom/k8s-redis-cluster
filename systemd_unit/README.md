@@ -1,5 +1,5 @@
 [//]: # (SPDX-License-Identifier: BSD-3-Clause)
-[//]: # (Copyright 2021, Intel Corporation)
+[//]: # (Copyright 2021-2022, Intel Corporation)
 
 # dax systemd unit files
 
@@ -19,8 +19,7 @@ Run steps below:
 ```shell
 cp dax* /etc/systemd/system/
 ```
-2. Enable necessary units:
+2. Enable necessary unit:
 ```shell
 systemctl enable dax-waitdev.path
-systemctl enable dax.timer
 ```
