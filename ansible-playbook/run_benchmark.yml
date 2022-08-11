@@ -93,9 +93,11 @@
         kustomization_dir: "run_tests_timed"
         namespace: "{{ redis_cluster_namespace }}"
         templates_path: "{{ playbook_dir }}/templates"
+        job_node_name: "{{ groups['clients'][index % (groups['clients'] | length)] }}"
       loop: "{{ namespaces }}"
       loop_control:
         loop_var: redis_cluster_namespace
+        index_var: index
 
 - import_playbook: "include/playbooks/run_emon.yml"
   vars:

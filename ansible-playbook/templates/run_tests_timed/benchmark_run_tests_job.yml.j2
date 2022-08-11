@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright 2021, Intel Corporation
+# Copyright 2021-2022, Intel Corporation
 #
 ---
 apiVersion: batch/v1
@@ -57,3 +57,4 @@ spec:
           type: DirectoryOrCreate
       nodeSelector:
         node-type: redis-client
+        kubernetes.io/hostname: {{ job_node_name }}
