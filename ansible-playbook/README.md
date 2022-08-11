@@ -158,3 +158,6 @@ clusters_count=<optional> test_mode=<redis_or_tmdb> run_id=<run_identifier> ansi
 ### Proxy specific
 * `no_proxy`
 * `proxy`
+
+### PMem specific
+* `pmem_generation`: Specifies whether Persistent Memory dimms available in the system are the 1st or the 2nd generation series. Possible values - `1` or `2` (default: `2`);

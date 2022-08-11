@@ -18,7 +18,6 @@ multiple_clusters_balanced_default: True
 namespace_prefix: "redis-cluster"
 redis_nodes_count: 6
 
-target_fw_ver_default: "01.02.00.5444"
 test_mode: "{{ lookup('env', 'test_mode') }}"
 warm_up_benchmark_run_default: False
 
@@ -50,6 +49,13 @@ tmdb_registry_default: ""
 tmdb_repository_default: ""
 tmdb_tag_default: ""
 
+# PMem specific
+pmem_generation_default: 2
+target_fw_ver: "{{ target_fw_ver_all_generations[pmem_generation] }}"
+target_fw_ver_all_generations:
+  "1": "01.02.00.5444"
+  "2": "02.02.00.1553"
+
 #
 
 clients: "{{ lookup('env', 'clients') | default(clients_default, true) }}"
@@ -62,6 +68,7 @@ logdir: "{{ lookup('env', 'logdir') | default(logdir_default, true) }}"
 multiple_clusters_balanced: "{{ lookup('env', 'multiple_clusters_balanced') | default(multiple_clusters_balanced_default, true) }}"
 multithreading: "{{ lookup('env', 'multithreading') | default(multithreading_default, true) }}"
 pipeline: "{{ lookup('env', 'pipeline') | default(pipeline_default, true) }}"
+pmem_generation: "{{ lookup('env', 'pmem_generation') | default(pmem_generation_default, true) }}"
 pmem_variant: "{{ lookup('env', 'pmem_variant') | default(pmem_variant_default, true) }}"
 ratio: "{{ lookup('env', 'ratio') | default(ratio_default, true) }}"
 redis_registry: "{{ lookup('env', 'redis_registry') | default(redis_registry_default, true) }}"
@@ -69,7 +76,6 @@ redis_repository: "{{ lookup('env', 'redis_repository') | default(redis_reposito
 redis_tag: "{{ lookup('env', 'redis_tag') | default(redis_tag_default, true) }}"
 requests: "{{ lookup('env', 'requests') | default(requests_default, true) }}"
 run_count: "{{ lookup('env', 'run_count') | default(run_count_default, true) }}"
-target_fw_ver: "{{ lookup('env', 'target_fw_ver') | default(target_fw_ver_default, true) }}"
 test_time: "{{ lookup('env', 'test_time') | default(test_time_default, true) }}"
 threads: "{{ lookup('env', 'threads') | default(threads_default, true) }}"
 tmdb_registry: "{{ lookup('env', 'tmdb_registry') | default(tmdb_registry_default, true) }}"
