@@ -82,7 +82,10 @@ python_packages:
   - "kubernetes"
   - "openpyxl"
   - "openshift"
-  - "openpyxl"
-  - "boto3"
+
+system_packages:
+  - "daxctl"
+  - "ipmctl"
+  - "ndctl"
 
 # vi:et:sw=2 ts=2 sts=2 ft=ansible

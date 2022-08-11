@@ -1,5 +1,5 @@
 [//]: # (SPDX-License-Identifier: BSD-3-Clause)
-[//]: # (Copyright 2021, Intel Corporation)
+[//]: # (Copyright 2021-2022, Intel Corporation)
 
 # redis-cluster on k8s testcase
 
@@ -15,7 +15,7 @@ To get more information about usage of scripts in the subdirectories, follow the
 
 ## Prerequisites
 Before you start working with the repository, make sure you have installed:
-* **Ansible 2.9**
+* **Python 3.6+**
 * **Helm**
-* **k8s**
+* **Kubernetes**
 * **Docker** (required to build TieredMemDB image)

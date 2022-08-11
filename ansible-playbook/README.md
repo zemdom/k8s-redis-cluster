@@ -63,6 +63,10 @@ Benchmark logs and run metadata are uploaded to `{{ logdir_default }}/{{ log_dir
 ## How to run
 
 ### Prework
+Prepare OS for running Ansible playbooks - install Ansible and other necessary Python packages using pip (needs to be run only once):
+```shell
+pip3 install -r utils/controller_requirements.txt
+```
 Prepare OS for running benchmarking playbooks - install necessary Python packages and Ansible collections (needs to be run only once):
 ```shell
 ansible-playbook -i inventory setup.yml

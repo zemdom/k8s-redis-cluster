@@ -35,6 +35,18 @@
     - name: "setup | Load emon specific playbook variables"
       include_vars: "vars/emon_vars.yml"
 
+    - name: "setup | Load proxy specific playbook variables"
+      include_vars: "vars/proxy_vars.yml"
+
+    - name: "setup | Install required system packages"
+      package:
+        name: "{{ system_packages }}"
+        state: present
+      environment:
+        http_proxy: "{{ proxy }}"
+        https_proxy: "{{ proxy }}"
+        no_proxy: "{{ no_proxy }}"
+
     - name: "setup | Copy kmemdax systemd unit files"
       copy:
          src: "{{ item }}"
