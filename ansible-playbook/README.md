@@ -4,7 +4,7 @@
 # redis-cluster and memtier_benchmark on k8s playbooks
 
 ## General info
-The redis-cluster testing can be run for **Redis** or for **TieredMemDB**, to choose between the databases set the `test_mode` variable value to `redis` or to `tmdb`.
+The redis-cluster testing can be run for [**Redis**](https://redis.io/) or for [**TieredMemDB**](https://tieredmemdb.io/), to choose between the databases set the `test_mode` variable value to `redis` or to `tmdb`.
 
 The test can be run in three variants:
 * **single cluster** - when only one redis-cluster is deployed and benchmarked;
@@ -17,8 +17,10 @@ The test can be run in three variants:
 #### Inventory file
 To create an `inventory` file, copy the content of `inventory.example` file and replace the example hostnames for `[computes]`, `[utility]` and `[clients]` groups with own hostnames or IPs.
 * The `[computes]` group specifies k8s nodes, where redis-cluster(s) instances are deployed.
-* The `[utility]` group specifies a node, which runs the playbooks (ansible controller). The node can reside outside of the k8s cluster, but it needs to be able to communicate with the cluster.
+* The `[utility]` group specifies a node, which runs the playbooks (Ansible controller). The node can reside outside of the k8s cluster, but it needs to be able to communicate with the cluster.
 * The `[clients]` group specifies k8s nodes, which run memtier_benchmark instances.
+
+Then, to enable passwordless connection, generate ssh keys for all the hosts specified in `inventory` file and copy them to `[utility]` node.
 
 #### Changing default values of environment variables
 There are two ways to change default values of environment variables:
