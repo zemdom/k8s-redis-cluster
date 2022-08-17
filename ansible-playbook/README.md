@@ -162,4 +162,4 @@ clusters_count=<optional> test_mode=<redis_or_tmdb> run_id=<run_identifier> ansi
 * `proxy`
 
 ### PMem specific
-* `pmem_generation`: Specifies whether Persistent Memory dimms available in the system are the 1st or the 2nd generation series. Possible values - `1` or `2` (default: `2`);
+* `pmem_generation`: Specifies whether PMem dimms available in the system are Intel Optane Persistent Memory 100 series (Apache Pass/1st gen) or Intel Optane Persistent Memory 200 series (Barlow Pass/2nd gen). Possible values - `1` or `2` (default: `2`);
